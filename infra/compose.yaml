@@ -1,0 +1,43 @@
+# Environnement de recette uniquement : aucune exposition réseau extérieure.
+name: mono-recette
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: mono
+      POSTGRES_USER: mono
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Définir un secret externe}
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U mono -d mono']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  api:
+    build: ../services/api
+    environment:
+      MONO_DATABASE_URL: ${MONO_DATABASE_URL:?Définir la connexion PostgreSQL avec hôte db}
+      MONO_RECETTE_MODE: 'true'
+      MONO_TERMINAL_ID: ${MONO_TERMINAL_ID:?Relever l’UUID du terminal}
+      MONO_SYNC_TOKEN: ${MONO_SYNC_TOKEN:?Créer un jeton éphémère}
+      MONO_TOKEN_EXPIRES_AT: ${MONO_TOKEN_EXPIRES_AT:?Définir une expiration UTC}
+    ports: ['127.0.0.1:8000:8000']
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, 'import urllib.request; urllib.request.urlopen("http://localhost:8000/health/ready")']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ['no-new-privileges:true']
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+volumes:
+  postgres_data:

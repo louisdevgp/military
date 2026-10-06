@@ -1,0 +1,469 @@
+Tu développes une application de vente et de gestion de stock pour une boutique d’effets militaires appelée provisoirement UNIVERS DU MONO.
+
+Le délai est de deux semaines. L’objectif est une première version utilisable, testée et déployable. Travaille progressivement et livre des fonctionnalités complètes. Ne génère pas tout le projet d’un seul coup sans vérifier chaque étape.
+
+### 1. Mission et règles de travail
+
+Avant de coder :
+
+- Lis le descriptif fourni, les fichiers du dépôt et les éventuels AGENTS.md.
+- Identifie le code existant avant de modifier quoi que ce soit.
+- Crée un AGENTS.md qui reprend les conventions essentielles du projet.
+- Documente le périmètre, les hypothèses et les décisions dans docs/.
+- Prépare un plan de développement avec critères de validation.
+- Signale immédiatement les dépendances matérielles manquantes.
+
+Travaille de manière autonome pour les choix techniques courants. Demande une précision uniquement lorsqu’une décision métier ou un blocage matériel empêche de continuer correctement.
+
+N’invente jamais un SDK, une API constructeur, une compatibilité matérielle ou le succès d’un test. Distingue clairement ce qui est implémenté, testé en simulation et testé sur le TPE physique.
+
+À chaque étape : implémente, vérifie, corrige, puis résume les résultats et les limites restantes.
+
+### 2. Stack et structure
+
+Utiliser :
+
+- Flutter et Dart pour l’application Android.
+- Riverpod pour la gestion d’état et l’injection des dépendances.
+- SQLite avec Drift pour la base locale et les migrations.
+- Python avec FastAPI pour l’API.
+- SQLAlchemy et Alembic pour les données et migrations serveur.
+- PostgreSQL pour la base serveur.
+- React, TypeScript et Vite pour le site public.
+- Docker Compose pour le backend et la base.
+- Nginx pour HTTPS, le site et le proxy de l’API.
+- GitHub Actions pour les vérifications et la préparation du déploiement.
+
+Vérifie les versions stables compatibles au démarrage. Verrouille les dépendances et conserve les fichiers de verrouillage.
+
+Organisation proposée :
+
+apps/pos_flutter/
+apps/storefront/
+services/api/
+infra/
+docs/
+
+Utilise un monolithe modulaire. Pas de microservices ni de dépendances inutiles. Redis et les workers séparés ne sont pas nécessaires sans besoin démontré.
+
+### 3. Périmètre de livraison
+
+La première version couvre :
+
+- Une boutique.
+- Un seul TPE actif pour les ventes.
+- Deux rôles : administrateur et vendeur.
+- Catalogue avec catégories, articles et variantes.
+- Stock initial, réapprovisionnement et corrections.
+- Vente et paiement complet.
+- Impression du ticket et duplicata.
+- Historique des ventes.
+- Annulation et retours.
+- Dépenses.
+- Rapports et exports CSV.
+- Synchronisation avec le serveur.
+- Sauvegarde et restauration.
+- Site public de la boutique.
+
+Hors périmètre :
+
+- Plusieurs TPE vendant simultanément.
+- Plusieurs boutiques.
+- Paiement bancaire ou Mobile Money intégré.
+- Paiements partiels et crédit client.
+- Panier et commande sur le site public.
+- Fidélité et promotions complexes.
+- Comptabilité réglementaire complète.
+- Intégration fiscale non spécifiée.
+
+### 4. TPE et impression
+
+Appareil annoncé : H10P-OS01, version 14.0.182.
+
+Ne suppose pas que cette version identifie exactement Android ou le SDK imprimante.
+
+Dès la première étape :
+
+- Vérifier le modèle et la version Android réels.
+- Vérifier l’installation d’un APK signé.
+- Identifier le constructeur et obtenir le SDK imprimante correspondant.
+- Produire un APK minimal imprimant un ticket sur l’appareil.
+- Tester les accents, les montants, un logo et les lignes longues.
+- Vérifier les informations d’erreur réellement exposées par le SDK.
+
+Isoler l’impression derrière une interface PrinterService, avec :
+
+- Une implémentation réelle utilisant le SDK validé.
+- Une implémentation simulée pour le développement.
+- Une passerelle Kotlin via les canaux de plateforme Flutter si nécessaire.
+
+Ne pas utiliser un plugin PAX, Sunmi ou Bluetooth générique en supposant qu’il pilote l’imprimante intégrée.
+
+Prévoir le format 58 mm, à confirmer sur l’appareil. Ne pas figer une largeur en pixels sans validation.
+
+La vente est enregistrée avant l’impression. Un échec d’impression ne recrée pas la vente et ne modifie pas le stock.
+
+Une réimpression utilise le même numéro et porte la mention DUPLICATA.
+
+### 5. Fonctionnement hors ligne et synchronisation
+
+Les ventes, stocks, dépenses, historique et tickets doivent fonctionner sans réseau.
+
+Pour cette version :
+
+- Le TPE actif est le seul point de saisie des opérations commerciales et de stock.
+- Le serveur conserve une copie centralisée des opérations synchronisées.
+- Le site public ne modifie ni les stocks ni les ventes.
+- Ne crée pas une deuxième source de modification concurrente du catalogue ou du stock.
+
+Chaque opération validée localement crée un événement dans une outbox, dans la même transaction SQLite.
+
+Prévoir :
+
+- Identifiant UUID de l’opération.
+- Identifiant stable du terminal.
+- Séquence locale persistante.
+- Version du format de l’événement.
+- Date de l’événement et date de réception serveur.
+- Statut en attente, synchronisé ou erreur.
+- Tentatives avec délai progressif.
+- Bouton de synchronisation manuelle.
+
+Le serveur doit appliquer une opération une seule fois, même si elle est envoyée plusieurs fois. Assurer l’idempotence avec des contraintes uniques en base, pas seulement un contrôle dans le code.
+
+Si une même clé est réutilisée avec un contenu différent, refuser et signaler le conflit.
+
+Accuser réception uniquement après validation de la transaction serveur. Préserver l’ordre des opérations dépendantes et rendre les erreurs visibles.
+
+Ne jamais remplacer le stock local par une valeur serveur ancienne.
+
+L’interface doit afficher le nombre d’opérations en attente et la date de dernière synchronisation.
+
+Documenter les limites de révocation des accès lorsque le TPE est hors ligne.
+
+### 6. Catalogue et stock
+
+Séparer :
+
+- Catégorie.
+- Article.
+- Variante vendable.
+
+Une variante possède une référence unique, un prix et un stock propre.
+
+Exemples :
+
+- Rangers noirs, pointure 42.
+- Rangers noirs, pointure 43.
+- Treillis MO, taille L.
+- Béret rouge, taille 58.
+
+Prévoir modèle, couleur, taille ou pointure, seuil de stock et statut actif.
+
+Ne pas supprimer les articles présents dans l’historique : les désactiver.
+
+Le stock doit être expliqué par des mouvements :
+
+- INITIAL.
+- RECEPTION.
+- SALE.
+- RETURN.
+- LOSS.
+- ADJUSTMENT.
+- REVERSAL.
+
+Chaque mouvement possède une quantité signée, une variante, un utilisateur, un motif et une référence d’origine.
+
+Bloquer le stock négatif. Vérifier à nouveau la disponibilité à la validation.
+
+Le panier ne modifie pas le stock. La vente validée et les mouvements associés sont enregistrés atomiquement.
+
+Pour l’inventaire, enregistrer la quantité comptée et le mouvement de différence ; ne pas écraser silencieusement l’historique.
+
+### 7. Vente et paiement
+
+Parcours :
+
+- Rechercher un article.
+- Sélectionner sa variante.
+- Choisir la quantité.
+- Vérifier le panier.
+- Renseigner le client si nécessaire.
+- Choisir le mode de paiement.
+- Valider.
+- Imprimer.
+
+Informations client : nom, prénoms, unité et téléphone. Les rendre configurables comme obligatoires ou facultatives.
+
+Modes : espèces, Mobile Money déclaré, virement déclaré et autre.
+
+Cette version enregistre les paiements ; elle ne les exécute pas auprès d’un opérateur.
+
+Un paiement complet et un seul mode par vente.
+
+Pour les espèces, distinguer :
+
+- Total de vente.
+- Somme remise.
+- Monnaie rendue.
+- Montant réellement encaissé pour la vente.
+
+Stocker les montants FCFA comme entiers. Ne jamais utiliser de nombres flottants pour les calculs monétaires.
+
+Protéger contre le double appui sur Valider.
+
+Conserver dans chaque ligne vendue une copie historique de la désignation, référence, variante, prix et éventuel coût. Les changements de catalogue ne modifient pas les anciennes ventes.
+
+Prévoir un numéro lisible unique incluant un préfixe de terminal, l’année et une séquence persistante. Le numéro et l’UUID technique sont distincts.
+
+### 8. Retours et annulations
+
+Une vente validée ne peut pas être effacée.
+
+Créer une opération corrective liée à la vente d’origine avec auteur, date et motif.
+
+Prévoir :
+
+- Annulation complète autorisée.
+- Retour partiel ou complet.
+- Remboursement.
+- Article revendable ou endommagé.
+- Limite des retours cumulés à la quantité vendue.
+
+Un article endommagé n’augmente pas le stock vendable.
+
+Bloquer les doubles annulations et les doubles remboursements.
+
+### 9. Ticket
+
+Inclure :
+
+- Nom et logo de la boutique.
+- Contacts.
+- Numéro.
+- Date et heure.
+- Vendeur.
+- Nom, unité et téléphone du client lorsqu’ils sont renseignés.
+- Désignation et variante.
+- Quantité.
+- Prix unitaire.
+- Montant de ligne.
+- Total.
+- Mode de paiement.
+- Somme remise et monnaie pour les espèces.
+- Pied de ticket configurable.
+
+Les coordonnées et le logo doivent être configurables. Ne pas inventer les informations définitives.
+
+Ne pas ajouter de QR code présenté comme fiscal ni prétendre que le ticket satisfait une exigence fiscale non validée.
+
+### 10. Dépenses et rapports
+
+Dépenses : catégorie, montant, date, motif, auteur et mode de règlement.
+
+Rapports sur jour, semaine, mois, année et période libre :
+
+- Ventes nettes.
+- Quantités vendues.
+- Ventes par catégorie et variante.
+- Répartition des paiements.
+- Retours et remboursements.
+- Dépenses par catégorie.
+- Stock actuel.
+- Alertes de stock faible.
+
+Utiliser Africa/Abidjan comme fuseau métier. Conserver des horodatages avec fuseau et définir précisément les bornes des périodes.
+
+Ne pas afficher ventes moins dépenses sous le nom bénéfice.
+
+Si les coûts d’achat ne sont pas disponibles, afficher explicitement que la marge n’est pas calculable.
+
+Distinguer achats de stock, charges et mouvements de trésorerie pour éviter les doubles déductions.
+
+Tester la concordance des rapports locaux et serveur après synchronisation.
+
+### 11. Site public de la boutique
+
+Créer un site responsive en français avec :
+
+- Présentation de la boutique.
+- Catégories.
+- Catalogue des articles publiés.
+- Photos.
+- Prix si l’administrateur autorise leur affichage.
+- Adresse, horaires et contacts configurables.
+- Bouton WhatsApp avec message prérempli.
+- Mentions et informations commerciales à compléter.
+
+Le site est un catalogue de présentation. Pas de paiement ni de commande en ligne pour cette version.
+
+Ne jamais exposer :
+
+- Coûts d’achat.
+- Données client.
+- Dépenses.
+- Ventes.
+- Comptes utilisateurs.
+- Quantités exactes de stock par défaut.
+
+Le catalogue public utilise uniquement les données synchronisées. Ne pas promettre une disponibilité en temps réel lorsque le TPE est hors ligne.
+
+Les articles sont non publiés par défaut. Les photos et réglages de publication sont gérés par l’administrateur dans le TPE.
+
+Séparer les schémas et routes publiques des routes privées.
+
+Prévoir référencement de base, titres de pages, métadonnées, images optimisées et accessibilité. Aucun témoignage, adresse ou contenu commercial fictif présenté comme réel.
+
+### 12. Sécurité
+
+Mettre en place :
+
+- Autorisations côté API et dans les opérations locales.
+- Aucun secret dans le dépôt ou les applications publiques.
+- Fichier .env.example sans valeurs sensibles.
+- Aucun compte administrateur avec mot de passe prédéfini en production.
+- Mots de passe hachés avec un algorithme adapté.
+- Jetons d’accès courts et renouvellement contrôlé.
+- Secrets du terminal protégés par les mécanismes sécurisés Android.
+- Aucun mot de passe serveur conservé pour le mode hors ligne.
+- Authentification locale hors ligne limitée aux utilisateurs déjà autorisés.
+- Limitation des tentatives d’authentification.
+- Verrouillage après inactivité.
+- HTTPS.
+- Validation stricte des entrées.
+- Requêtes paramétrées.
+- CORS limité aux origines nécessaires.
+- Limites de taille et validation des fichiers image.
+- Logs sans données personnelles ni secrets.
+- Journal d’audit des actions sensibles.
+
+Le vendeur ne peut pas modifier les droits, restaurer une sauvegarde ou effectuer une correction de stock administrateur.
+
+Les migrations doivent être versionnées et préserver les données.
+
+### 13. Sauvegarde et restauration
+
+Distinguer synchronisation et sauvegarde.
+
+Prévoir :
+
+- Sauvegarde cohérente de la base locale et des fichiers nécessaires.
+- Copie protégée hors du terminal.
+- Sauvegarde planifiée de PostgreSQL.
+- Procédure de restauration testée.
+- Vérification de version et d’intégrité.
+- Sauvegarde préalable avant remplacement.
+- Restauration réservée à l’administrateur.
+
+Traiter explicitement les identifiants d’opérations et la séquence de numérotation après restauration.
+
+Une ancienne sauvegarde ne doit jamais être réutilisée comme un nouveau terminal sans réconciliation avec les opérations déjà reçues par le serveur.
+
+### 14. Qualité du code
+
+Séparer interface, logique métier, accès aux données, synchronisation et matériel.
+
+Privilégier une organisation par fonctionnalité, sans architecture inutilement complexe.
+
+Interdire :
+
+- Logique métier dans les widgets.
+- Requêtes SQL dispersées.
+- Exceptions ignorées.
+- Données fictives dans les écrans de production.
+- Messages de succès avant confirmation réelle.
+- TODO critiques laissés pour la livraison.
+
+Utiliser :
+
+- Formatage et analyse statique Flutter.
+- Ruff et tests Python.
+- Vérification TypeScript et lint frontend.
+- Typage Python adapté.
+- Erreurs compréhensibles pour les utilisateurs.
+- Pagination serveur.
+- Index utiles.
+- Documentation OpenAPI et exemples de synchronisation.
+
+### 15. Tests prioritaires
+
+Tester réellement :
+
+- Calculs monétaires.
+- Stock insuffisant.
+- Validation atomique.
+- Double validation.
+- Modification de prix sans altérer l’historique.
+- Retours cumulés.
+- Permissions.
+- Synchronisation rejouée.
+- Réponse réseau perdue après enregistrement serveur.
+- Opérations reçues dans le mauvais ordre.
+- Même identifiant avec contenu différent.
+- Isolation de l’API publique.
+- Migrations et restauration.
+
+Sur le TPE :
+
+- Impression réelle.
+- Absence de papier.
+- Réimpression.
+- Redémarrage.
+- Fonctionnement sans Internet.
+- Mise à jour conservant les données.
+
+Les tests simulés de l’imprimante ne remplacent pas les essais matériels.
+
+### 16. Déploiement
+
+Préparer :
+
+- Docker Compose.
+- Configuration Nginx.
+- Vérifications de santé.
+- Base non exposée publiquement.
+- Volumes persistants.
+- Secrets externes au dépôt.
+- Sauvegardes et rotation des logs.
+- Procédure de migration et retour arrière.
+- Environnements de test et production distincts.
+
+La CI vérifie Flutter, Python et le site, puis produit les artefacts.
+
+Ne jamais lancer une migration destructive ou déployer sur une production existante sans autorisation explicite.
+
+Conserver la clé de signature Android hors du dépôt. Documenter sa sauvegarde et son usage pour les futures mises à jour.
+
+### 17. Ordre de développement
+
+1. Cadrage, dépôt et test matériel.
+2. Base locale et parcours vertical : article, vente, stock, ticket.
+3. API et synchronisation idempotente de ce parcours.
+4. Catalogue complet et mouvements de stock.
+5. Historique, corrections, dépenses et rapports.
+6. Site public.
+7. Sécurité, sauvegarde et restauration.
+8. Recette, pilote et livraison.
+
+La synchronisation doit être testée tôt, avant de multiplier les modules.
+
+À partir du dixième jour, privilégier les corrections et la recette. Signaler tout changement qui remet le délai en cause.
+
+### 18. Définition de terminé
+
+La livraison est terminée quand :
+
+- L’APK signé fonctionne sur le H10P réel.
+- Une vente hors ligne met correctement le stock à jour.
+- Un ticket est imprimé et réimprimé sans double vente.
+- La synchronisation résiste aux répétitions et interruptions.
+- Les rapports concordent avec les opérations.
+- Le site affiche uniquement le catalogue public autorisé.
+- La restauration et la mise à jour ont été testées.
+- Aucun secret n’est dans le dépôt.
+- Les tests critiques passent.
+- Les limites restantes sont documentées.
+
+Livrables : sources, APK, site compilé, backend déployable, migrations, tests, guide d’installation, guide utilisateur, sauvegarde et restauration, procédure de mise à jour et compte rendu de recette.
+
+Commence par examiner le dépôt et le descriptif, produire le plan et construire le premier parcours complet sur le TPE. Si le SDK manque, continue les composants indépendants avec un simulateur clairement identifié et indique précisément ce qu’il faut obtenir du fournisseur.

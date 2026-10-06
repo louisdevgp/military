@@ -1,0 +1,189 @@
+{
+  "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+  "events": [
+    {
+      "id": "6a39879f-14e9-498c-aed8-e91dc96c4063",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 1,
+      "version": 1,
+      "kind": "user.created",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "user_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+        "name": "Admin TEST",
+        "role": "admin"
+      }
+    },
+    {
+      "id": "fa036815-dd86-43c2-b3b5-5c5573bf309d",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 2,
+      "version": 1,
+      "kind": "user.created",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "user_id": "ea543476-554a-4502-b262-4b0b626e3e53",
+        "name": "Vendeur TEST",
+        "role": "seller"
+      }
+    },
+    {
+      "id": "787ce58a-5371-4b0e-ae28-14f6d5d56f6e",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 3,
+      "version": 1,
+      "kind": "catalog.created",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "category_id": "8d63519f-0fbe-4094-a573-a41acd4eeae0",
+        "category": "Catégorie TEST",
+        "product_id": "1f8c40a0-d1cd-4ef4-bd6f-891e3aacb18d",
+        "name": "Article TEST",
+        "variant_id": "285fd10d-ae38-4baf-8a74-580f0b896bd2",
+        "sku": "TEST-42",
+        "label": "Noir / 42",
+        "price": 12500,
+        "initial_stock": 5,
+        "published": false
+      }
+    },
+    {
+      "id": "909b0721-1f95-40a2-8743-2d0d0d075c3f",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 4,
+      "version": 1,
+      "kind": "catalog.created",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "category_id": "347761d4-8cf3-498b-b5fa-d2ff89eb658d",
+        "category": "Treillis TEST",
+        "product_id": "1aa2fbc9-f1e9-421e-bdc1-cb8ca6f6dc75",
+        "name": "Treillis TEST",
+        "variant_id": "90d5df62-b233-4a19-9f1b-130794a07fd4",
+        "sku": "TRE-TEST-VERT-OLIVE-M",
+        "label": "Vert olive · Taille M",
+        "price": 20000,
+        "initial_stock": 1,
+        "published": false,
+        "color": "Vert olive",
+        "size": "M"
+      }
+    },
+    {
+      "id": "705926ae-d4fb-4d3c-91eb-f9727a6d0ccd",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 5,
+      "version": 1,
+      "kind": "catalog.created",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "category_id": "347761d4-8cf3-498b-b5fa-d2ff89eb658d",
+        "category": "Treillis TEST",
+        "product_id": "1aa2fbc9-f1e9-421e-bdc1-cb8ca6f6dc75",
+        "name": "Treillis TEST",
+        "variant_id": "ec44f031-4aa4-46be-ad83-7c4a614d5342",
+        "sku": "TRE-TEST-VERT-OLIVE-L",
+        "label": "Vert olive · Taille L",
+        "price": 20000,
+        "initial_stock": 0,
+        "published": false,
+        "color": "Vert olive",
+        "size": "L"
+      }
+    },
+    {
+      "id": "e5739bdc-d19d-4a00-99ef-64241331f609",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 6,
+      "version": 1,
+      "kind": "sale.completed",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "ea543476-554a-4502-b262-4b0b626e3e53",
+      "payload": {
+        "id": "e5739bdc-d19d-4a00-99ef-64241331f609",
+        "number": "FACT-2026-00001",
+        "occurred_at": "2026-10-06T12:00:00.000Z",
+        "seller_id": "ea543476-554a-4502-b262-4b0b626e3e53",
+        "seller": "Vendeur TEST",
+        "customer": {},
+        "lines": [
+          {
+            "variant_id": "285fd10d-ae38-4baf-8a74-580f0b896bd2",
+            "category": "Catégorie TEST",
+            "name": "Article TEST",
+            "sku": "TEST-42",
+            "label": "Noir / 42",
+            "quantity": 2,
+            "unit_price": 12500,
+            "line_total": 25000,
+            "unit_cost": null
+          }
+        ],
+        "total": 25000,
+        "payment_mode": "cash",
+        "tendered": 30000,
+        "change": 5000,
+        "collected": 25000
+      }
+    },
+    {
+      "id": "cb331d59-0a9b-4f9f-a391-140bfc85ffee",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 7,
+      "version": 1,
+      "kind": "variant.price_changed",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "variant_id": "285fd10d-ae38-4baf-8a74-580f0b896bd2",
+        "price": 14000
+      }
+    },
+    {
+      "id": "983295ce-bc64-46b7-9dda-0607d5771649",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 8,
+      "version": 1,
+      "kind": "settings.receipt_updated",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "shop_name": "UNIVERS DU MONO",
+        "contacts": "0700000000",
+        "footer": "Votre satisfaction, notre motivation.",
+        "logo": "none"
+      }
+    },
+    {
+      "id": "c0b97c64-7056-4b61-8a54-123d36c7965d",
+      "terminal_id": "deaee6d7-d47b-4913-9f7d-8ae2bd823398",
+      "sequence": 9,
+      "version": 1,
+      "kind": "sale.payment_corrected",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "2bba5ab5-0df2-4e94-a7b2-cc71d2c651ee",
+      "payload": {
+        "sale_id": "e5739bdc-d19d-4a00-99ef-64241331f609",
+        "sale_number": "FACT-2026-00001",
+        "payment_mode": "cash",
+        "tendered": 25000,
+        "change": 0,
+        "reason": "Somme remise TEST corrigée"
+      }
+    }
+  ],
+  "expected": {
+    "stock": 3,
+    "total": 25000,
+    "current_price": 14000,
+    "sale_count": 1,
+    "corrections": 1,
+    "actors": 2,
+    "variants": 3
+  }
+}

@@ -1,0 +1,203 @@
+import 'package:drift/drift.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+
+part 'database.g.dart';
+
+class Categories extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().unique()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Products extends Table {
+  TextColumn get id => text()();
+  TextColumn get categoryId => text().references(Categories, #id)();
+  TextColumn get name => text()();
+  BoolColumn get published => boolean().withDefault(const Constant(false))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Variants extends Table {
+  TextColumn get id => text()();
+  TextColumn get productId => text().references(Products, #id)();
+  TextColumn get sku => text().unique()();
+  TextColumn get label => text()();
+  IntColumn get price =>
+      integer().check(const CustomExpression<bool>('price >= 0'))();
+  IntColumn get stock =>
+      integer().check(const CustomExpression<bool>('stock >= 0'))();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+  // Structured attributes (schema v5); null on older or free variants.
+  TextColumn get color => text().nullable()();
+  TextColumn get size => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class Sales extends Table {
+  TextColumn get id => text()();
+  TextColumn get number => text().unique()();
+  TextColumn get requestHash => text()();
+  TextColumn get occurredAt => text()();
+  TextColumn get snapshot => text()();
+  IntColumn get total =>
+      integer().check(const CustomExpression<bool>('total >= 0'))();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class StockMovements extends Table {
+  TextColumn get id => text()();
+  TextColumn get variantId => text().references(Variants, #id)();
+  TextColumn get kind => text()();
+  IntColumn get quantity => integer()();
+  TextColumn get actorId => text()();
+  TextColumn get reason => text()();
+  TextColumn get originId => text()();
+  TextColumn get occurredAt => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class OutboxEntries extends Table {
+  TextColumn get id => text()();
+  IntColumn get sequence => integer().unique()();
+  TextColumn get envelope => text()();
+  TextColumn get status => text().withDefault(const Constant('pending'))();
+  IntColumn get attempts => integer().withDefault(const Constant(0))();
+  TextColumn get nextAttemptAt => text().nullable()();
+  TextColumn get errorCode => text().nullable()();
+  TextColumn get receivedAt => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Local operators. Only a salted PBKDF2 hash of the PIN is stored; the PIN
+/// never leaves the terminal and is never synchronized.
+class Users extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text().unique()();
+  TextColumn get role => text().check(
+    const CustomExpression<bool>("role IN ('admin', 'seller')"),
+  )();
+  TextColumn get pinHash => text()();
+  TextColumn get pinSalt => text()();
+  IntColumn get pinIterations => integer()();
+  BoolColumn get active => boolean().withDefault(const Constant(true))();
+  IntColumn get failedAttempts => integer().withDefault(const Constant(0))();
+  TextColumn get lockedUntil => text().nullable()();
+  TextColumn get createdAt => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Administrator corrections of a sale's declared payment. The sale snapshot
+/// is never modified; the latest correction gives the effective payment.
+class SaleCorrections extends Table {
+  TextColumn get id => text()();
+  TextColumn get saleId => text().references(Sales, #id)();
+  TextColumn get paymentMode => text()();
+  IntColumn get tendered => integer().nullable()();
+  IntColumn get changeGiven =>
+      integer().check(const CustomExpression<bool>('change_given >= 0'))();
+  TextColumn get reason => text()();
+  TextColumn get actorId => text()();
+  TextColumn get actorName => text()();
+  TextColumn get occurredAt => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Shop settings edited by the administrator (receipt identity, logo).
+class ShopSettings extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+  @override
+  Set<Column> get primaryKey => {key};
+}
+
+class TerminalStates extends Table {
+  IntColumn get singleton => integer().withDefault(const Constant(1))();
+  TextColumn get terminalId => text()();
+  TextColumn get prefix => text().unique()();
+  IntColumn get eventSequence => integer().withDefault(const Constant(0))();
+  IntColumn get saleSequence => integer().withDefault(const Constant(0))();
+  TextColumn get lastSyncAt => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {singleton};
+}
+
+@DriftDatabase(
+  tables: [
+    Categories,
+    Products,
+    Variants,
+    Sales,
+    StockMovements,
+    OutboxEntries,
+    TerminalStates,
+    Users,
+    SaleCorrections,
+    ShopSettings,
+  ],
+)
+class PosDatabase extends _$PosDatabase {
+  PosDatabase([QueryExecutor? executor])
+    : super(executor ?? driftDatabase(name: 'mono_recette_v1'));
+
+  @override
+  int get schemaVersion => 5;
+
+  Future<void> _createLocalPhotoTable() => customStatement('''
+    CREATE TABLE local_product_photos (
+      product_id TEXT NOT NULL REFERENCES products(id),
+      position INTEGER NOT NULL CHECK(position BETWEEN 0 AND 2),
+      path TEXT NOT NULL UNIQUE,
+      PRIMARY KEY(product_id, position)
+    )
+  ''');
+
+  Future<void> _createCorrectionIndex() => customStatement(
+    'CREATE INDEX sale_corrections_sale_idx ON sale_corrections(sale_id, occurred_at)',
+  );
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) async {
+      await m.createAll();
+      await _createLocalPhotoTable();
+      await customStatement(
+        'CREATE INDEX movement_variant_idx ON stock_movements(variant_id)',
+      );
+      await customStatement(
+        'CREATE INDEX outbox_status_sequence_idx ON outbox_entries(status, sequence)',
+      );
+      await customStatement(
+        'CREATE INDEX sales_date_idx ON sales(occurred_at)',
+      );
+      await _createCorrectionIndex();
+    },
+    beforeOpen: (_) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 1 || to != 5) {
+        throw StateError('Migration non prise en charge : $from → $to.');
+      }
+      // Additive steps only: existing sales, stock and outbox stay untouched.
+      if (from < 2) await _createLocalPhotoTable();
+      if (from < 3) {
+        await m.createTable(users);
+        await m.createTable(saleCorrections);
+        await _createCorrectionIndex();
+      }
+      if (from < 4) await m.createTable(shopSettings);
+      if (from < 5) {
+        await m.addColumn(variants, variants.color);
+        await m.addColumn(variants, variants.size);
+      }
+    },
+  );
+}

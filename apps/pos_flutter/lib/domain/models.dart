@@ -1,0 +1,281 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
+const maxMoney = 1000000000000;
+const maxQuantity = 1000000;
+
+class BusinessException implements Exception {
+  const BusinessException(this.message);
+  final String message;
+  @override
+  String toString() => message;
+}
+
+enum Role { admin, seller }
+
+class Actor {
+  const Actor(this.id, this.name, this.role);
+  final String id;
+  final String name;
+  final Role role;
+  void requireAdmin() {
+    if (role != Role.admin) {
+      throw const BusinessException(
+        'Cette opération est réservée à l’administrateur.',
+      );
+    }
+  }
+}
+
+/// Operator as listed on the lock screen; never carries PIN material.
+class LocalUser {
+  const LocalUser({
+    required this.id,
+    required this.name,
+    required this.role,
+    required this.active,
+    this.lockedUntil,
+  });
+  final String id, name;
+  final Role role;
+  final bool active;
+  final DateTime? lockedUntil;
+  Actor get actor => Actor(id, name, role);
+}
+
+enum PaymentMode {
+  cash('Espèces'),
+  mobileMoney('Mobile Money déclaré'),
+  transfer('Virement déclaré'),
+  other('Autre');
+
+  const PaymentMode(this.label);
+  final String label;
+}
+
+class CatalogItem {
+  const CatalogItem({
+    required this.id,
+    this.productId = '',
+    required this.category,
+    required this.name,
+    required this.sku,
+    required this.label,
+    required this.price,
+    required this.stock,
+    this.photoPaths = const [],
+    this.color,
+    this.size,
+  });
+  final String id, productId, category, name, sku, label;
+  final int price, stock;
+  final List<String> photoPaths;
+
+  /// Structured attributes; null for free single variants.
+  final String? color, size;
+}
+
+/// Size grids given by the customer on 6 October 2026. Other articles keep a
+/// free variant label until the shop specifies their sizes.
+enum SizeGrid {
+  single('Variante unique', '', []),
+  clothing('Tailles treillis', 'Taille', ['M', 'L', 'XL', 'XXL', 'XXXL']),
+  shoes('Pointures rangers', 'Pointure', [
+    '38',
+    '39',
+    '40',
+    '41',
+    '42',
+    '43',
+    '44',
+    '45',
+    '46',
+  ]);
+
+  const SizeGrid(this.title, this.prefix, this.sizes);
+  final String title, prefix;
+  final List<String> sizes;
+
+  /// « Noir · Pointure 42 » or « Taille XL » when no colour is given.
+  String label(String size, String color) {
+    final base = '$prefix $size';
+    return color.trim().isEmpty ? base : '${color.trim()} · $base';
+  }
+
+  /// Reference plus colour and size, e.g. RAN-NOIR-42 or TRE-VERT-OLIVE-XL.
+  String sku(String reference, String size, {String color = ''}) => [
+    reference.trim().toUpperCase(),
+    if (colorCode(color).isNotEmpty) colorCode(color),
+    size,
+  ].join('-');
+}
+
+/// Colour as written by the administrator: trimmed, first letter upper case.
+String normalizeColor(String color) {
+  final c = color.trim().replaceAll(RegExp(r'\s+'), ' ');
+  return c.isEmpty ? '' : '${c[0].toUpperCase()}${c.substring(1)}';
+}
+
+/// Reference fragment for a colour: « Vert olive » → VERT-OLIVE.
+String colorCode(String color) {
+  const accents = {
+    'À': 'A',
+    'Â': 'A',
+    'Ç': 'C',
+    'É': 'E',
+    'È': 'E',
+    'Ê': 'E',
+    'Ë': 'E',
+    'Î': 'I',
+    'Ï': 'I',
+    'Ô': 'O',
+    'Ù': 'U',
+    'Û': 'U',
+    'Ü': 'U',
+  };
+  final upper = color
+      .trim()
+      .toUpperCase()
+      .split('')
+      .map((ch) => accents[ch] ?? ch)
+      .join();
+  return upper
+      .replaceAll(RegExp(r'[^A-Z0-9]+'), '-')
+      .replaceAll(RegExp(r'^-+|-+$'), '');
+}
+
+/// One sellable variant to create with its product.
+class VariantDraft {
+  const VariantDraft({
+    required this.sku,
+    required this.label,
+    required this.price,
+    required this.stock,
+    this.color,
+    this.size,
+  });
+  final String sku, label;
+  final int price, stock;
+  final String? color, size;
+}
+
+/// Real stock typed for each colour × size that exists in the shop. Only the
+/// combinations with a typed quantity become variants (0 = exists, sold out).
+List<VariantDraft> matrixVariants({
+  required SizeGrid grid,
+  required String reference,
+  required List<String> colors,
+  required int price,
+  required Map<(String, String), int> stock,
+}) => [
+  for (final color in colors.isEmpty ? [''] : colors)
+    for (final size in grid.sizes)
+      if (stock[(color, size)] case final qty?)
+        VariantDraft(
+          sku: grid.sku(reference, size, color: color),
+          label: grid.label(size, color),
+          price: price,
+          stock: qty,
+          color: color.isEmpty ? null : color,
+          size: size,
+        ),
+];
+
+class CashPreview {
+  const CashPreview(this.tendered, this.change);
+  final int tendered, change;
+}
+
+CashPreview? previewCash(int total, String input) {
+  try {
+    final tendered = moneyInput(input);
+    return tendered < total ? null : CashPreview(tendered, tendered - total);
+  } on BusinessException {
+    return null;
+  }
+}
+
+/// Change above this amount, or at least equal to the sale total, asks the
+/// cashier to confirm the tendered amount (typing errors such as 600 000
+/// instead of 60 000).
+const changeConfirmationThreshold = 50000;
+
+bool needsChangeConfirmation(int total, int tendered) {
+  final change = tendered - total;
+  return change > 0 &&
+      (change >= total || change >= changeConfirmationThreshold);
+}
+
+/// Exact amount, then the next round banknote totals above it.
+List<int> quickTenders(int total) {
+  int ceilTo(int step) => ((total + step - 1) ~/ step) * step;
+  final amounts = <int>{total};
+  for (final step in [5000, 10000, 50000]) {
+    final rounded = ceilTo(step);
+    if (rounded > total && rounded <= maxMoney) amounts.add(rounded);
+  }
+  return amounts.toList()..sort();
+}
+
+class SaleRequest {
+  SaleRequest({
+    required this.id,
+    required Map<String, int> quantities,
+    required this.paymentMode,
+    this.tendered,
+    Map<String, String> customer = const {},
+  }) : quantities = Map.unmodifiable(quantities),
+       customer = Map.unmodifiable(customer);
+  final String id;
+  final Map<String, int> quantities;
+  final PaymentMode paymentMode;
+  final int? tendered;
+  final Map<String, String> customer;
+
+  Map<String, Object?> toJson() => {
+    'quantities': quantities,
+    'payment_mode': paymentMode.name,
+    'tendered': tendered,
+    'customer': customer,
+  };
+}
+
+Object? canonical(Object? value) {
+  if (value is Map) {
+    final keys = value.keys.cast<String>().toList()..sort();
+    return {for (final key in keys) key: canonical(value[key])};
+  }
+  if (value is List) return value.map(canonical).toList();
+  return value;
+}
+
+String fingerprint(Object? value) =>
+    sha256.convert(utf8.encode(jsonEncode(canonical(value)))).toString();
+
+int moneyInput(String value) {
+  if (!RegExp(r'^\d{1,13}$').hasMatch(value.trim())) {
+    throw const BusinessException(
+      'Saisissez un montant entier en FCFA, sans décimales.',
+    );
+  }
+  final amount = int.parse(value.trim());
+  if (amount > maxMoney) throw const BusinessException('Montant trop élevé.');
+  return amount;
+}
+
+/// Customer format `FACT-<year>-<sequence>` (receipt annex). The sequence is the
+/// terminal's persistent sale counter and never restarts, so numbers stay
+/// unique across years; the operation UUID remains the technical identity.
+String saleNumber(int year, int sequence) =>
+    'FACT-$year-${sequence.toString().padLeft(5, '0')}';
+
+String fcfa(int amount) =>
+    '${amount.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ')} FCFA';
+
+String abidjanDate(String iso) {
+  // Africa/Abidjan is UTC+00, without DST for all dates accepted by this V1.
+  final d = DateTime.parse(iso).toUtc();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(d.day)}/${two(d.month)}/${d.year} ${two(d.hour)}:${two(d.minute)}';
+}

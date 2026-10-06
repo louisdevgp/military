@@ -1,0 +1,64 @@
+name: Vérification du parcours de recette
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.6'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+        working-directory: apps/pos_flutter
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+        working-directory: apps/pos_flutter
+      - run: flutter analyze
+        working-directory: apps/pos_flutter
+      - run: flutter test --dart-define=EXPORT_CONTRACT=true
+        working-directory: apps/pos_flutter
+      - run: flutter build apk --debug --target-platform android-arm --dart-define=RECETTE_MODE=true
+        working-directory: apps/pos_flutter
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mono-recette-apk-et-contrat
+          path: |
+            apps/pos_flutter/build/app/outputs/flutter-apk/app-debug.apk
+            contracts/vertical_v1.json
+  api:
+    needs: flutter
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6
+        env:
+          POSTGRES_USER: mono_test
+          POSTGRES_DB: mono_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U mono_test -d mono_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      MONO_TEST_DATABASE_URL: postgresql+psycopg://mono_test@localhost:5432/mono_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mono-recette-apk-et-contrat
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install uv==0.12.23
+      - run: uv sync --frozen
+        working-directory: services/api
+      - run: uv run ruff check . && uv run ruff format --check . && uv run pytest -q
+        working-directory: services/api
+      - run: docker build -t mono-api:recette services/api

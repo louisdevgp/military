@@ -1,0 +1,26 @@
+# Render Blueprint — recette API only (not production).
+# Secrets are never stored here: Render generates the sync token and asks for
+# the others in its dashboard (sync: false).
+services:
+  - type: web
+    name: mono-api-recette
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./services/api
+    dockerfilePath: ./services/api/Dockerfile
+    healthCheckPath: /health/ready
+    envVars:
+      - key: MONO_RECETTE_MODE
+        value: "true"
+      - key: MONO_SYNC_TOKEN
+        generateValue: true
+      # Supabase session pooler URI, postgresql+psycopg://…:5432/postgres?sslmode=require
+      - key: MONO_DATABASE_URL
+        sync: false
+      # UUID shown on the H10 in Administration > Synchronisation.
+      - key: MONO_TERMINAL_ID
+        sync: false
+      # UTC end of the recette session, e.g. 2026-10-20T23:59:00Z
+      - key: MONO_TOKEN_EXPIRES_AT
+        sync: false
