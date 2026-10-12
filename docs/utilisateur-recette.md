@@ -44,6 +44,10 @@ Administrateur : toucher l'article, puis **Modifier les photos**. Ajouter jusqu'
 - **Restaurer…** (même écran, ou écran d'activation d'un terminal neuf) : saisir le mot de passe, choisir le fichier. L'application vérifie la sauvegarde, garde une copie de l'état actuel, redémarre, puis **bloque les ventes** jusqu'à la réconciliation.
 - **Administration → Synchronisation → Réconcilier maintenant** : récupère auprès du serveur les opérations faites après la sauvegarde. Ensuite, redonner un code PIN aux comptes indiqués (créés après la sauvegarde).
 
+## Informations client obligatoires
+
+**Administration → Ticket et boutique → Informations client obligatoires** : activer les champs exigés à chaque vente (nom, prénoms, unité, téléphone). À l'encaissement, ils sont marqués « * » et la vente est refusée tant qu'ils ne sont pas remplis. Un téléphone saisi doit comporter 8 à 15 chiffres.
+
 ## Ticket et boutique
 
 Menu **Administration** → **Ticket et boutique** : nom de la boutique, contacts, pied de ticket et logo (logo d'origine, **Choisir une image** depuis le téléphone, ou **Sans logo**). L'aperçu montre le ticket avant d'enregistrer. Après enregistrement, imprimer un **Ticket test** pour vérifier le papier. Les tickets déjà imprimés ne changent pas ; un duplicata est toujours imprimé avec les coordonnées et le logo à jour (choix de la boutique).

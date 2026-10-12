@@ -65,3 +65,16 @@ def test_expenses_closings_and_report_endpoint(system):
         "/api/private/reports/summary", params=params, headers={"Authorization": "Bearer x"}
     )
     assert anonymous.status_code == 401
+
+
+def test_customer_fields_setting_is_admin_only_and_validated(system):
+    client, _, terminal, _ = system
+    payload = {"required": ["name", "phone"]}
+    kind = "settings.customer_fields_updated"
+    assert (
+        client.post(ROUTE, json=envelope(terminal, 1, kind, "seller", payload)).json()["detail"]
+        == "ADMIN_REQUIRED"
+    )
+    for bad in ({"required": ["email"]}, {"required": ["name", "name"]}):
+        assert client.post(ROUTE, json=envelope(terminal, 1, kind, "admin", bad)).status_code == 422
+    assert client.post(ROUTE, json=envelope(terminal, 1, kind, "admin", payload)).status_code == 200

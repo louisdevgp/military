@@ -145,6 +145,19 @@ class CashClosed(StrictModel):
     comment: Annotated[str, Field(max_length=200)]
 
 
+class CustomerFieldsUpdated(StrictModel):
+    """Audit: customer fields made mandatory at checkout by an administrator."""
+
+    required: Annotated[list[Literal["name", "first_name", "unit", "phone"]], Field(max_length=4)]
+
+    @field_validator("required")
+    @classmethod
+    def unique_fields(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value):
+            raise ValueError("duplicate field")
+        return value
+
+
 class BackupCreated(StrictModel):
     """Audit only: the archive never reaches the server."""
 
@@ -234,6 +247,7 @@ class Envelope(StrictModel):
         "expense.cancelled",
         "cash.closed",
         "backup.created",
+        "settings.customer_fields_updated",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

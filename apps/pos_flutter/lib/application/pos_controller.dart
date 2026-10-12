@@ -87,6 +87,7 @@ class PosState {
     this.syncing = false,
     this.reconcileRequired = false,
     this.lastBackupAt,
+    this.customerRequired = const {},
   });
   final List<CatalogItem> items;
   final Map<String, int> cart;
@@ -107,6 +108,9 @@ class PosState {
   /// Restored terminal not yet caught up with the server: no new operation.
   final bool reconcileRequired;
   final String? lastBackupAt;
+
+  /// Customer fields made mandatory by the administrator.
+  final Set<String> customerRequired;
   int get cartQuantity => cart.values.fold(0, (sum, value) => sum + value);
   int get total => cart.entries.fold(
     0,
@@ -129,6 +133,7 @@ class PosState {
     bool? syncing,
     bool? reconcileRequired,
     String? lastBackupAt,
+    Set<String>? customerRequired,
   }) => PosState(
     items: items ?? this.items,
     cart: cart ?? this.cart,
@@ -146,6 +151,7 @@ class PosState {
     syncing: syncing ?? this.syncing,
     reconcileRequired: reconcileRequired ?? this.reconcileRequired,
     lastBackupAt: lastBackupAt ?? this.lastBackupAt,
+    customerRequired: customerRequired ?? this.customerRequired,
   );
 }
 
@@ -292,6 +298,7 @@ class PosController extends Notifier<PosState> {
       syncStatus: await repo.syncStatus(),
       reconcileRequired: await _setting(reconcileKey) != null,
       lastBackupAt: await _setting(lastBackupKey),
+      customerRequired: await repo.customerRequired(),
     );
     _scheduleSoon();
   }
@@ -809,6 +816,16 @@ class PosController extends Notifier<PosState> {
     state = state.copy(busy: false, message: message);
     return true;
   }
+
+  Future<bool> saveCustomerRequired(Set<String> fields) => _run(() async {
+    await ref
+        .read(settingsRepositoryProvider)
+        .saveCustomerRequired(actor, fields);
+    return fields.isEmpty
+        ? 'Informations client facultatives.'
+        : 'Obligatoire à la vente : ${[for (final f in customerFields.keys)
+            if (fields.contains(f)) customerFields[f]].join(', ')}.';
+  });
 
   /// Saves the receipt identity (administrator only).
   Future<bool> saveReceiptSettings(ReceiptSettings next) async {

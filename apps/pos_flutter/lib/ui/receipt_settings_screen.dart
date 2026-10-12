@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/pos_controller.dart';
 import '../data/settings_repository.dart';
+import '../domain/models.dart' show customerFields;
 import '../printing/receipt.dart';
 import 'mono_theme.dart';
 import 'receipt_preview.dart';
@@ -199,6 +200,30 @@ class _ReceiptSettingsScreenState extends ConsumerState<ReceiptSettingsScreen> {
               InlineNotice(_error!, error: true),
               const SizedBox(height: 12),
             ],
+            const SectionLabel(
+              'Informations client obligatoires',
+              subtitle: 'Exigées à chaque vente. Enregistré immédiatement.',
+            ),
+            for (final field in customerFields.entries)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(field.value),
+                value: ref
+                    .watch(posProvider)
+                    .customerRequired
+                    .contains(field.key),
+                onChanged: _working
+                    ? null
+                    : (on) {
+                        final next = {
+                          ...ref.read(posProvider).customerRequired,
+                        };
+                        on ? next.add(field.key) : next.remove(field.key);
+                        ref
+                            .read(posProvider.notifier)
+                            .saveCustomerRequired(next);
+                      },
+              ),
             const SectionLabel('Aperçu'),
             Center(child: ReceiptPreview(buildTestReceipt(settings: _current))),
             const SizedBox(height: 8),

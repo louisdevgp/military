@@ -181,6 +181,14 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Artefact `livrables/mono-recette-0.12.0-debug.apk`, SHA-256 `E16F052D9728904F625666905E1DF7BBB3A9E179BE9EA98D29749E7B67F1D254`.
 - Non encore vérifié sur l'appareil : chiffrement natif, enregistrement et ouverture du fichier `.monobak`, redémarrage après restauration. Tâche GitHub non exécutée (secrets absents).
 
+## Incrément 0.13.0+19 — informations client obligatoires (lot 6)
+
+- Choix appliqué (cahier des charges §7, l'utilisateur n'ayant pas tranché) : nom, prénoms, unité et téléphone rendus **obligatoires ou facultatifs par l'administrateur** (Ticket et boutique), tous facultatifs par défaut ; **pas de carnet de clients** (données personnelles non conservées hors des ventes). Téléphone saisi vérifié (8 à 15 chiffres, « + » et espaces).
+- Contrôle à l'enregistrement de la vente (dans la transaction, avant tout numéro ni mouvement) ; rejeu d'une vente déjà enregistrée non bloqué. Encaissement : champs obligatoires marqués « * », section client ouverte d'office.
+- Événement d'audit `settings.customer_fields_updated` (admin, liste validée) ; rejoué par la réconciliation.
+- Flutter : analyse sans anomalie, **60 tests réussis**. Contrat régénéré (18 événements). API : **29 réussis sur PostgreSQL 18.6**, 28 + 1 ignoré sur SQLite.
+- Sur le H10 avant installation : aucune sauvegarde encore créée (essai de sauvegarde 0.12.0 à faire).
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

@@ -27,6 +27,7 @@ from mono.schemas import (
     BackupCreated,
     CashClosed,
     CatalogCreated,
+    CustomerFieldsUpdated,
     Envelope,
     ExpenseCancelled,
     ExpenseRecorded,
@@ -113,6 +114,8 @@ def apply_event(session: Session, incoming: Envelope) -> Acknowledgement:
             cancel_expense(session, incoming, ExpenseCancelled.model_validate(incoming.payload))
         elif incoming.kind == "cash.closed":
             close_cash(session, incoming, CashClosed.model_validate(incoming.payload))
+        elif incoming.kind == "settings.customer_fields_updated":
+            CustomerFieldsUpdated.model_validate(incoming.payload)
         elif incoming.kind == "backup.created":
             BackupCreated.model_validate(incoming.payload)
         elif incoming.kind == "stock.moved":

@@ -337,6 +337,39 @@ class ReturnRequest {
   };
 }
 
+/// Customer fields of a sale (§7). Each one can be made mandatory by the
+/// administrator; all are optional by default.
+const customerFields = {
+  'name': 'Nom',
+  'first_name': 'Prénoms',
+  'unit': 'Unité',
+  'phone': 'Téléphone',
+};
+
+/// Settings key holding the mandatory fields, comma separated.
+const customerRequiredKey = 'customer_required';
+
+final _phone = RegExp(r'^\+?[0-9 ]{8,20}$');
+
+void validateCustomer(Map<String, String> customer, Set<String> required) {
+  for (final field in required) {
+    if ((customer[field] ?? '').trim().isEmpty) {
+      throw BusinessException(
+        'Information client obligatoire : ${customerFields[field]}.',
+      );
+    }
+  }
+  final phone = (customer['phone'] ?? '').trim();
+  if (phone.isNotEmpty &&
+      (!_phone.hasMatch(phone) ||
+          phone.replaceAll(RegExp(r'[^0-9]'), '').length < 8 ||
+          phone.replaceAll(RegExp(r'[^0-9]'), '').length > 15)) {
+    throw const BusinessException(
+      'Téléphone invalide : 8 à 15 chiffres (le « + » et les espaces sont acceptés).',
+    );
+  }
+}
+
 Object? canonical(Object? value) {
   if (value is Map) {
     final keys = value.keys.cast<String>().toList()..sort();

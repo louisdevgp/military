@@ -29,6 +29,17 @@ class PosRepository {
 
   Future<TerminalState> terminal() => db.select(db.terminalStates).getSingle();
 
+  /// Customer fields the administrator made mandatory.
+  Future<Set<String>> customerRequired() async {
+    final row = await (db.select(
+      db.shopSettings,
+    )..where((s) => s.key.equals(customerRequiredKey))).getSingleOrNull();
+    return {
+      for (final f in (row?.value ?? '').split(','))
+        if (customerFields.containsKey(f)) f,
+    };
+  }
+
   /// Sellable variants only.
   Future<List<CatalogItem>> catalog() => _items(activeOnly: true);
 
@@ -632,6 +643,9 @@ class PosRepository {
       final previous = await (db.select(
         db.sales,
       )..where((s) => s.id.equals(request.id))).getSingleOrNull();
+      if (previous == null) {
+        validateCustomer(request.customer, await customerRequired());
+      }
       if (previous != null) {
         if (previous.requestHash != hash) {
           throw const BusinessException(

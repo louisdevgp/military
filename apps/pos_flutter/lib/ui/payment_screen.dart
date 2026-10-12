@@ -243,9 +243,15 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                     'Informations client',
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
-                  subtitle: const Text(
-                    'Facultatif pour cette recette',
-                    style: TextStyle(fontSize: 12, color: MonoColors.muted),
+                  initiallyExpanded: state.customerRequired.isNotEmpty,
+                  subtitle: Text(
+                    state.customerRequired.isEmpty
+                        ? 'Facultatif'
+                        : '* obligatoire',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: MonoColors.muted,
+                    ),
                   ),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
                   children: [
@@ -261,12 +267,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
                               : TextInputType.text,
                           decoration: InputDecoration(
                             counterText: '',
-                            labelText: switch (field.key) {
-                              'name' => 'Nom',
-                              'first_name' => 'Prénoms',
-                              'unit' => 'Unité',
-                              _ => 'Téléphone',
-                            },
+                            labelText:
+                                '${customerFields[field.key]}'
+                                '${state.customerRequired.contains(field.key) ? ' *' : ''}',
                           ),
                         ),
                       ),

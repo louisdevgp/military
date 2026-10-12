@@ -405,6 +405,15 @@ class Reconciler {
                 actorName: await _actorName(actorId),
               ),
             );
+      case 'settings.customer_fields_updated':
+        await db
+            .into(db.shopSettings)
+            .insertOnConflictUpdate(
+              ShopSettingsCompanion.insert(
+                key: customerRequiredKey,
+                value: (p['required'] as List).join(','),
+              ),
+            );
       case 'settings.receipt_updated':
         for (final entry in {
           'shop_name': p['shop_name'],

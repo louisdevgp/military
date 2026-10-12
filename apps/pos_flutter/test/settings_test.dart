@@ -8,6 +8,7 @@ import 'package:mono_pos/data/pos_repository.dart';
 import 'package:mono_pos/data/settings_repository.dart';
 import 'package:mono_pos/domain/models.dart';
 import 'package:mono_pos/printing/receipt.dart';
+import 'package:uuid/uuid.dart';
 
 void main() {
   const admin = Actor('a', 'Admin', Role.admin);
@@ -98,4 +99,83 @@ void main() {
     expect((await settings.receiptSettings()).logo, LogoChoice.original);
     await dir.delete(recursive: true);
   });
+
+  test(
+    'champs client obligatoires : réglage audité et contrôle à la vente',
+    () async {
+      final pos = settings.pos;
+      final id = await pos.createItem(
+        actor: admin,
+        category: 'TEST',
+        name: 'Béret',
+        sku: 'BER',
+        label: '58',
+        price: 5000,
+        stock: 5,
+      );
+      SaleRequest sale(Map<String, String> customer) => SaleRequest(
+        id: const Uuid().v4(),
+        quantities: {id: 1},
+        paymentMode: PaymentMode.mobileMoney,
+        customer: customer,
+      );
+      await expectLater(
+        settings.saveCustomerRequired(seller, {'name'}),
+        throwsA(isA<BusinessException>()),
+      );
+      await expectLater(
+        settings.saveCustomerRequired(admin, {'email'}),
+        throwsA(isA<BusinessException>()),
+      );
+      // Optional by default; a typed phone is still checked.
+      await pos.checkout(seller, sale({}));
+      await expectLater(
+        pos.checkout(seller, sale({'phone': '12ab'})),
+        throwsA(
+          isA<BusinessException>().having(
+            (e) => e.message,
+            'm',
+            contains('Téléphone'),
+          ),
+        ),
+      );
+      await settings.saveCustomerRequired(admin, {'phone', 'name'});
+      expect(await pos.customerRequired(), {'name', 'phone'});
+      await expectLater(
+        pos.checkout(seller, sale({'name': 'Kone', 'phone': ''})),
+        throwsA(
+          isA<BusinessException>().having(
+            (e) => e.message,
+            'm',
+            contains('Téléphone'),
+          ),
+        ),
+      );
+      await expectLater(
+        pos.checkout(seller, sale({'phone': '+225 07 06 84 25 86'})),
+        throwsA(
+          isA<BusinessException>().having(
+            (e) => e.message,
+            'm',
+            contains('Nom'),
+          ),
+        ),
+      );
+      await pos.checkout(
+        seller,
+        sale({'name': 'Kone', 'phone': '+225 07 06 84 25 86'}),
+      );
+      expect((await pos.history()), hasLength(2));
+      final events = [
+        for (final e in await db.select(db.outboxEntries).get())
+          jsonDecode(e.envelope) as Map,
+      ];
+      final setting = events.singleWhere(
+        (e) => e['kind'] == 'settings.customer_fields_updated',
+      );
+      expect(setting['payload'], {
+        'required': ['name', 'phone'],
+      });
+    },
+  );
 }

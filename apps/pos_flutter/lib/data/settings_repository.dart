@@ -37,6 +37,35 @@ class SettingsRepository {
     );
   }
 
+  /// Mandatory customer fields at checkout, audited.
+  Future<void> saveCustomerRequired(Actor admin, Set<String> fields) async {
+    admin.requireAdmin();
+    if (fields.any((f) => !customerFields.containsKey(f))) {
+      throw const BusinessException('Champ client inconnu.');
+    }
+    final ordered = [
+      for (final f in customerFields.keys)
+        if (fields.contains(f)) f,
+    ];
+    await db.transaction(() async {
+      await db
+          .into(db.shopSettings)
+          .insertOnConflictUpdate(
+            ShopSettingsCompanion.insert(
+              key: customerRequiredKey,
+              value: ordered.join(','),
+            ),
+          );
+      await pos.appendEvent(
+        PosRepository.uuid.v4(),
+        'settings.customer_fields_updated',
+        admin,
+        pos.now().toUtc().toIso8601String(),
+        {'required': ordered},
+      );
+    });
+  }
+
   Future<void> saveReceiptSettings(Actor admin, ReceiptSettings next) async {
     admin.requireAdmin();
     final name = next.shopName.trim();
