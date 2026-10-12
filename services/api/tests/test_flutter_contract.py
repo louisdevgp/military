@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from mono.main import create_app
-from mono.models import Actor, Sale, SaleCorrection, Terminal, Variant
+from mono.models import Actor, Sale, SaleCorrection, SaleReturn, Terminal, Variant
 
 
 def test_actual_flutter_outbox_matches_server(system):
@@ -42,3 +42,4 @@ def test_actual_flutter_outbox_matches_server(system):
         )
         assert session.scalar(select(func.count()).select_from(Actor)) == expected["actors"]
         assert session.scalar(select(SaleCorrection.tendered)) == 25000
+        assert session.scalar(select(func.sum(SaleReturn.refund_total))) == expected["refunded"]

@@ -612,4 +612,129 @@ void main() {
       expect(await repo.catalog(), hasLength(1));
     },
   );
+
+  test(
+    'retours et annulation : bornes, revendable/endommagé, idempotence',
+    () async {
+      final a = await item(); // R42, 12 500, stock 5
+      final b = await item(sku: 'R43', price: 10000); // stock 5
+      final sale = await repo.checkout(
+        seller,
+        SaleRequest(
+          id: const Uuid().v4(),
+          quantities: {a: 2, b: 1},
+          paymentMode: PaymentMode.cash,
+          tendered: 40000,
+        ),
+      ); // total 35 000 ; stocks 3 / 4
+      final saleId = sale['id'] as String;
+      ReturnRequest ret(
+        String id,
+        Map<String, ({int quantity, bool resaleable})> lines, {
+        bool cancel = false,
+      }) => ReturnRequest(
+        id: id,
+        saleId: saleId,
+        lines: lines,
+        refundMode: PaymentMode.cash,
+        reason: 'Taille inadaptée',
+        cancel: cancel,
+      );
+      Future<void> refused(Future<void> Function() call) =>
+          expectLater(call(), throwsA(isA<BusinessException>()));
+      final first = const Uuid().v4();
+      await refused(
+        () => repo.returnSale(
+          seller,
+          ret(first, {a: (quantity: 1, resaleable: true)}),
+        ),
+      );
+      await refused(
+        () => repo.returnSale(
+          admin,
+          ret(first, {a: (quantity: 3, resaleable: true)}),
+        ),
+      );
+      final r1 = await repo.returnSale(
+        admin,
+        ret(first, {a: (quantity: 1, resaleable: true)}),
+      );
+      expect(r1['refund_total'], 12500);
+      // Same id and content: same result, no second refund or stock change.
+      final again = await repo.returnSale(
+        admin,
+        ret(first, {a: (quantity: 1, resaleable: true)}),
+      );
+      expect(again['refund_total'], 12500);
+      await refused(
+        () => repo.returnSale(
+          admin,
+          ret(first, {a: (quantity: 1, resaleable: false)}),
+        ),
+      );
+      // Damaged item: refunded but not back in stock.
+      await repo.returnSale(
+        admin,
+        ret(const Uuid().v4(), {b: (quantity: 1, resaleable: false)}),
+      );
+      var stock = {for (final i in await repo.catalog()) i.id: i.stock};
+      expect((stock[a], stock[b]), (4, 4));
+      await refused(
+        () => repo.returnSale(
+          admin,
+          ret(const Uuid().v4(), {b: (quantity: 1, resaleable: true)}),
+        ),
+      );
+      var history = (await repo.history()).single;
+      expect(history['returns']['refunded'], 22500);
+      expect(history['returns']['complete'], isFalse);
+      expect(
+        buildReceipt(history, duplicate: true).toPlainText(),
+        contains('RETOUR PARTIEL'),
+      );
+      // Cancellation refunds what is left (1 × A), then nothing remains.
+      final cancel = await repo.returnSale(
+        admin,
+        ret(const Uuid().v4(), {}, cancel: true),
+      );
+      expect(cancel['refund_total'], 12500);
+      expect(cancel['kind'], 'CANCEL');
+      await refused(
+        () => repo.returnSale(admin, ret(const Uuid().v4(), {}, cancel: true)),
+      );
+      stock = {for (final i in await repo.catalog()) i.id: i.stock};
+      expect(stock[a], 5);
+      history = (await repo.history()).single;
+      expect(history['returns']['refunded'], 35000);
+      expect(
+        (history['returns']['complete'], history['returns']['cancelled']),
+        (true, true),
+      );
+      expect(history['total'], 35000, reason: 'la vente n’est pas modifiée');
+      final ticket = buildReturnReceipt(cancel).toPlainText();
+      expect(ticket, contains('ANNULATION'));
+      expect(ticket, contains('TOTAL REMBOURSÉ'));
+      expect(ticket, contains('12 500 F CFA'));
+      expect(
+        buildReceipt(history, duplicate: true).toPlainText(),
+        contains('VENTE ANNULÉE'),
+      );
+      final returnsEvents = [
+        for (final e in await db.select(db.outboxEntries).get())
+          if ((jsonDecode(e.envelope) as Map)['kind'] == 'sale.returned')
+            (jsonDecode(e.envelope) as Map)['payload'] as Map,
+      ];
+      expect(returnsEvents.map((p) => p['refund_total']), [
+        12500,
+        10000,
+        12500,
+      ]);
+      expect((returnsEvents[1]['lines'] as List).single['resaleable'], isFalse);
+      final movements = await repo.movements(a);
+      expect(
+        movements.where((m) => m.kind == 'RETURN').map((m) => m.quantity),
+        [1, 1],
+      );
+    },
+  );
 }

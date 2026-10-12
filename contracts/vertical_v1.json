@@ -1,48 +1,48 @@
 {
-  "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+  "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
   "events": [
     {
-      "id": "334a5c65-e020-420f-9e9e-7c7235bb1d62",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "3eb4e543-e151-4281-a414-65799b37ef34",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 1,
       "version": 1,
       "kind": "user.created",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "user_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+        "user_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
         "name": "Admin TEST",
         "role": "admin"
       }
     },
     {
-      "id": "5fc844c6-c679-4f19-98a9-059583db0656",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "8883eaed-e72b-4d0c-ad93-d754abe85e34",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 2,
       "version": 1,
       "kind": "user.created",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "user_id": "248250ed-74b6-48cf-baf7-624e89e58fa8",
+        "user_id": "6cacb964-01f7-46f7-8227-5f67ce35447a",
         "name": "Vendeur TEST",
         "role": "seller"
       }
     },
     {
-      "id": "a35237ef-6a36-461a-86c1-e5364454f1c8",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "ab012570-c332-47fe-9427-a81d93401ec3",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 3,
       "version": 1,
       "kind": "catalog.created",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "category_id": "e35bd3c5-19ee-49d1-846d-154354a6a563",
+        "category_id": "8993821c-9304-4882-82f1-f0f51c18a437",
         "category": "Catégorie TEST",
-        "product_id": "5de9e777-72e2-43cd-9afa-614a5b10db60",
+        "product_id": "d9ca726c-551f-4e7b-8dc8-82ecb097fee5",
         "name": "Article TEST",
-        "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+        "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
         "sku": "TEST-42",
         "label": "Noir / 42",
         "price": 12500,
@@ -51,19 +51,19 @@
       }
     },
     {
-      "id": "aeabfb03-1e5a-44dd-8dea-602e8aee003e",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "d6e4f8d9-7b99-483b-89a2-94c7debaf918",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 4,
       "version": 1,
       "kind": "catalog.created",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "category_id": "161ecd86-05c0-4012-85de-8df9dd5c00b7",
+        "category_id": "bee4eefe-7d11-4bcf-8099-16e70943fd6b",
         "category": "Treillis TEST",
-        "product_id": "a172e155-4cf8-434a-85f7-844190b2a05d",
+        "product_id": "1a5040b5-8e90-43fe-9be2-53f5987f66a0",
         "name": "Treillis TEST",
-        "variant_id": "3f95b498-f0fe-4491-b35f-31a5b11dadb1",
+        "variant_id": "b6102333-2860-4ff1-b17b-37a754d6911d",
         "sku": "TRE-TEST-VERT-OLIVE-M",
         "label": "Vert olive · Taille M",
         "price": 20000,
@@ -74,19 +74,19 @@
       }
     },
     {
-      "id": "0edea98f-dcca-4908-a716-6d2b6e8be591",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "a5ea3373-1c20-4712-b827-d474b4202155",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 5,
       "version": 1,
       "kind": "catalog.created",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "category_id": "161ecd86-05c0-4012-85de-8df9dd5c00b7",
+        "category_id": "bee4eefe-7d11-4bcf-8099-16e70943fd6b",
         "category": "Treillis TEST",
-        "product_id": "a172e155-4cf8-434a-85f7-844190b2a05d",
+        "product_id": "1a5040b5-8e90-43fe-9be2-53f5987f66a0",
         "name": "Treillis TEST",
-        "variant_id": "6aa0cfd5-a4a0-4b7d-a168-7021d71de6ee",
+        "variant_id": "bb2b968e-7e62-4e5b-a44c-69f8c804c31e",
         "sku": "TRE-TEST-VERT-OLIVE-L",
         "label": "Vert olive · Taille L",
         "price": 20000,
@@ -97,23 +97,23 @@
       }
     },
     {
-      "id": "f3544b34-f502-4dbf-bbd4-8e8898e97571",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "aaf361c2-aa43-4997-a642-16d0b4242a5d",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 6,
       "version": 1,
       "kind": "sale.completed",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "248250ed-74b6-48cf-baf7-624e89e58fa8",
+      "actor_id": "6cacb964-01f7-46f7-8227-5f67ce35447a",
       "payload": {
-        "id": "f3544b34-f502-4dbf-bbd4-8e8898e97571",
+        "id": "aaf361c2-aa43-4997-a642-16d0b4242a5d",
         "number": "FACT-2026-00001",
         "occurred_at": "2026-10-06T12:00:00.000Z",
-        "seller_id": "248250ed-74b6-48cf-baf7-624e89e58fa8",
+        "seller_id": "6cacb964-01f7-46f7-8227-5f67ce35447a",
         "seller": "Vendeur TEST",
         "customer": {},
         "lines": [
           {
-            "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+            "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
             "category": "Catégorie TEST",
             "name": "Article TEST",
             "sku": "TEST-42",
@@ -132,70 +132,97 @@
       }
     },
     {
-      "id": "b8502ca3-f9e2-4017-8193-6b0acefae276",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "08025612-b8ca-4e45-b14a-017419d73fb3",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 7,
       "version": 1,
       "kind": "variant.price_changed",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+        "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
         "price": 14000
       }
     },
     {
-      "id": "cc8612dd-2ed2-40d5-9f00-c55efbaacb1d",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
+      "id": "4673382d-8152-4a8b-8057-d1becf56de50",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
       "sequence": 8,
+      "version": 1,
+      "kind": "sale.returned",
+      "occurred_at": "2026-10-06T12:00:00.000Z",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
+      "payload": {
+        "id": "4673382d-8152-4a8b-8057-d1becf56de50",
+        "sale_id": "aaf361c2-aa43-4997-a642-16d0b4242a5d",
+        "sale_number": "FACT-2026-00001",
+        "kind": "RETURN",
+        "lines": [
+          {
+            "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
+            "quantity": 1,
+            "unit_price": 12500,
+            "line_total": 12500,
+            "resaleable": true
+          }
+        ],
+        "refund_total": 12500,
+        "refund_mode": "cash",
+        "reason": "Retour TEST"
+      }
+    },
+    {
+      "id": "5d1c71b5-87db-4e31-8d25-c5483017a85d",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
+      "sequence": 9,
       "version": 1,
       "kind": "stock.moved",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+        "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
         "kind": "RECEPTION",
         "quantity": 2,
         "reason": "Réception TEST"
       }
     },
     {
-      "id": "bb3a4176-7704-4234-beb9-c4a93d3b1eb3",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
-      "sequence": 9,
+      "id": "07910e61-0c4a-48b4-8bb1-ad01c4015ca1",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
+      "sequence": 10,
       "version": 1,
       "kind": "stock.moved",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+        "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
         "kind": "ADJUSTMENT",
-        "quantity": -1,
+        "quantity": -2,
         "reason": "Inventaire",
         "counted": 4
       }
     },
     {
-      "id": "23b960dc-7d1d-4456-9146-1fe753c4d381",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
-      "sequence": 10,
+      "id": "17f173d6-535c-4b9f-b192-2ef1519ee1aa",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
+      "sequence": 11,
       "version": 1,
       "kind": "variant.updated",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "variant_id": "e95c672c-ec6c-492c-9f7b-c977a9858a2e",
+        "variant_id": "3d1db72d-a167-4b74-a9a3-f67b49ca9aba",
         "threshold": 2
       }
     },
     {
-      "id": "29a84ec5-ae20-457d-9115-867f63d51a61",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
-      "sequence": 11,
+      "id": "df3ebbaa-afc2-4a0b-9c64-cd9f82523a2c",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
+      "sequence": 12,
       "version": 1,
       "kind": "settings.receipt_updated",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
         "shop_name": "UNIVERS DU MONO",
         "contacts": "0700000000",
@@ -204,15 +231,15 @@
       }
     },
     {
-      "id": "8069cc2c-6ca4-4809-a5c7-b0b2102487fc",
-      "terminal_id": "d603ef94-08f4-49f6-8696-15d51783d94c",
-      "sequence": 12,
+      "id": "a00a5fef-860e-4b2e-bc85-107ab87ae6d4",
+      "terminal_id": "9e19ac85-c262-4169-a21f-0d8520a6f8af",
+      "sequence": 13,
       "version": 1,
       "kind": "sale.payment_corrected",
       "occurred_at": "2026-10-06T12:00:00.000Z",
-      "actor_id": "07a19d33-ee1c-446b-a46c-6117075f68cd",
+      "actor_id": "e45f2e88-097e-4308-953e-ab7fe8f48c7d",
       "payload": {
-        "sale_id": "f3544b34-f502-4dbf-bbd4-8e8898e97571",
+        "sale_id": "aaf361c2-aa43-4997-a642-16d0b4242a5d",
         "sale_number": "FACT-2026-00001",
         "payment_mode": "cash",
         "tendered": 25000,
@@ -228,6 +255,7 @@
     "sale_count": 1,
     "corrections": 1,
     "actors": 2,
-    "variants": 3
+    "variants": 3,
+    "refunded": 12500
   }
 }

@@ -96,6 +96,25 @@ class VariantUpdated(StrictModel):
     active: StrictBool | None = None
 
 
+class ReturnLine(StrictModel):
+    variant_id: UUID
+    quantity: Quantity
+    unit_price: Money
+    line_total: Money
+    resaleable: StrictBool
+
+
+class SaleReturned(StrictModel):
+    id: UUID
+    sale_id: UUID
+    sale_number: Annotated[str, Field(min_length=1, max_length=80)]
+    kind: Literal["RETURN", "CANCEL"]
+    lines: Annotated[list[ReturnLine], Field(min_length=1, max_length=100)]
+    refund_total: Money
+    refund_mode: PaymentMode
+    reason: Annotated[str, Field(min_length=3, max_length=200)]
+
+
 class Customer(StrictModel):
     name: OptionalText = ""
     first_name: OptionalText = ""
@@ -146,6 +165,7 @@ class Envelope(StrictModel):
         "settings.receipt_updated",
         "stock.moved",
         "variant.updated",
+        "sale.returned",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

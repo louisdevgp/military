@@ -278,4 +278,76 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await db.close();
   });
+
+  testWidgets('retour partiel depuis l’historique', (tester) async {
+    tester.view.physicalSize = const Size(720, 1440);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = PosDatabase(NativeDatabase.memory());
+    final repo = PosRepository(db);
+    await repo.initialize();
+    final id = await repo.createItem(
+      actor: testAdmin,
+      category: 'TEST',
+      name: 'Rangers',
+      sku: 'RAN-42',
+      label: 'Pointure 42',
+      price: 15000,
+      stock: 3,
+    );
+    await repo.checkout(
+      testAdmin,
+      SaleRequest(
+        id: '7f1f2c1e-1a1b-4c4d-8e8f-000000000042',
+        quantities: {id: 2},
+        paymentMode: PaymentMode.cash,
+        tendered: 30000,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        repositoryProvider.overrideWithValue(repo),
+        currentActorProvider.overrideWithValue(testAdmin),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const MonoApp()),
+    );
+    Future<void> settle() async {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 150)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await settle();
+    await tester.tap(find.text('Historique'));
+    await settle();
+    await tester.tap(find.byTooltip('Actions sur la vente'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Retour ou annulation'));
+    await settle();
+    await tester.tap(find.byTooltip('Plus'));
+    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.widgetWithText(TextField, 'Motif (obligatoire)'),
+      120,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Motif (obligatoire)'),
+      'Taille inadaptée',
+    );
+    await tester.tap(find.text('Rembourser'));
+    await settle();
+    expect((await repo.catalog()).single.stock, 2);
+    final sale = (await repo.history()).single;
+    expect(sale['returns']['refunded'], 15000);
+    expect(find.text('Aperçu du ticket'), findsOneWidget);
+    expect(find.text('REMBOURSEMENT'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await db.close();
+  });
 }

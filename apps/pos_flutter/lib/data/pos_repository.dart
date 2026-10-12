@@ -825,13 +825,267 @@ class PosRepository {
         latest[c.saleId] = c;
       }
     }
+    final returned = <String, Map<String, Object?>>{};
+    for (final row in rows) {
+      final summary = await _returnSummary(row.id);
+      if (summary != null) returned[row.id] = summary;
+    }
     return [
       for (final row in rows)
         {
           ...jsonDecode(row.snapshot) as Map<String, dynamic>,
           if (latest[row.id] case final c?) 'correction': _correction(c),
+          'returns': ?returned[row.id],
         },
     ];
+  }
+
+  /// Quantities already returned per variant for a sale.
+  Future<Map<String, int>> returnedQuantities(String saleId) async {
+    final rows = await db
+        .customSelect(
+          'SELECT l.variant_id, SUM(l.quantity) AS qty FROM sale_return_lines l '
+          'JOIN sale_returns r ON r.id = l.return_id WHERE r.sale_id = ? '
+          'GROUP BY l.variant_id',
+          variables: [Variable(saleId)],
+        )
+        .get();
+    return {
+      for (final r in rows) r.read<String>('variant_id'): r.read<int>('qty'),
+    };
+  }
+
+  /// Refunded total and whether every sold quantity came back.
+  Future<Map<String, Object?>?> _returnSummary(String saleId) async {
+    final ops = await (db.select(
+      db.saleReturns,
+    )..where((r) => r.saleId.equals(saleId))).get();
+    if (ops.isEmpty) return null;
+    final sale = await (db.select(
+      db.sales,
+    )..where((s) => s.id.equals(saleId))).getSingle();
+    final sold = _soldQuantities(
+      jsonDecode(sale.snapshot) as Map<String, dynamic>,
+    );
+    final back = await returnedQuantities(saleId);
+    return {
+      'refunded': ops.fold<int>(0, (sum, r) => sum + r.refundTotal),
+      'complete': sold.entries.every((e) => (back[e.key] ?? 0) >= e.value),
+      'cancelled': ops.any((r) => r.kind == 'CANCEL'),
+      'quantities': back,
+    };
+  }
+
+  static Map<String, int> _soldQuantities(Map<String, dynamic> sale) => {
+    for (final line in sale['lines'] as List)
+      line['variant_id'] as String: line['quantity'] as int,
+  };
+
+  /// Return (partial or complete) or cancellation of a recorded sale,
+  /// administrator only. Refund = sale price of the returned items, bounded
+  /// cumulatively by what was sold; resaleable items go back to stock with a
+  /// RETURN movement, damaged ones do not. Idempotent on the operation id.
+  Future<Map<String, dynamic>> returnSale(
+    Actor actor,
+    ReturnRequest request,
+  ) async {
+    actor.requireAdmin();
+    if (!Uuid.isValidUUID(fromString: request.id)) {
+      throw const BusinessException('Identifiant de retour invalide.');
+    }
+    final motive = _motive(request.reason);
+    final hash = fingerprint({...request.toJson(), 'actor_id': actor.id});
+    return db.transaction(() async {
+      final previous = await (db.select(
+        db.saleReturns,
+      )..where((r) => r.id.equals(request.id))).getSingleOrNull();
+      if (previous != null) {
+        if (previous.requestHash != hash) {
+          throw const BusinessException(
+            'Conflit : cet identifiant correspond à un autre retour.',
+          );
+        }
+        return _returnView(previous);
+      }
+      final sale = await (db.select(
+        db.sales,
+      )..where((s) => s.id.equals(request.saleId))).getSingleOrNull();
+      if (sale == null) throw const BusinessException('Vente introuvable.');
+      final snapshot = jsonDecode(sale.snapshot) as Map<String, dynamic>;
+      final soldLines = {
+        for (final line in snapshot['lines'] as List)
+          line['variant_id'] as String: line as Map<String, dynamic>,
+      };
+      final back = await returnedQuantities(sale.id);
+      final wanted = <String, ({int quantity, bool resaleable})>{};
+      if (request.cancel) {
+        for (final e in soldLines.entries) {
+          final left = (e.value['quantity'] as int) - (back[e.key] ?? 0);
+          if (left > 0) {
+            wanted[e.key] = (
+              quantity: left,
+              resaleable: request.lines[e.key]?.resaleable ?? true,
+            );
+          }
+        }
+        if (wanted.isEmpty) {
+          throw const BusinessException(
+            'Cette vente est déjà entièrement annulée ou remboursée.',
+          );
+        }
+      } else {
+        for (final e in request.lines.entries) {
+          if (e.value.quantity == 0) continue;
+          final line = soldLines[e.key];
+          if (line == null) {
+            throw const BusinessException('Article absent de cette vente.');
+          }
+          final left = (line['quantity'] as int) - (back[e.key] ?? 0);
+          if (e.value.quantity < 0 || e.value.quantity > left) {
+            throw BusinessException(
+              'Retour impossible : ${line['name']} (${line['label']}), $left restant(s) sur cette vente.',
+            );
+          }
+          wanted[e.key] = e.value;
+        }
+        if (wanted.isEmpty) {
+          throw const BusinessException('Indiquez au moins un article rendu.');
+        }
+      }
+      final timestamp = now().toUtc().toIso8601String();
+      final lines = [
+        for (final e in wanted.entries)
+          {
+            'variant_id': e.key,
+            'name': soldLines[e.key]!['name'],
+            'label': soldLines[e.key]!['label'],
+            'sku': soldLines[e.key]!['sku'],
+            'quantity': e.value.quantity,
+            'unit_price': soldLines[e.key]!['unit_price'] as int,
+            'line_total':
+                (soldLines[e.key]!['unit_price'] as int) * e.value.quantity,
+            'resaleable': e.value.resaleable,
+          },
+      ];
+      final refund = lines.fold<int>(
+        0,
+        (sum, l) => sum + (l['line_total'] as int),
+      );
+      final kind = request.cancel ? 'CANCEL' : 'RETURN';
+      // Header first: return lines reference it.
+      await db
+          .into(db.saleReturns)
+          .insert(
+            SaleReturnsCompanion.insert(
+              id: request.id,
+              saleId: sale.id,
+              kind: kind,
+              refundTotal: refund,
+              refundMode: request.refundMode.name,
+              reason: motive,
+              requestHash: hash,
+              actorId: actor.id,
+              actorName: actor.name,
+              occurredAt: timestamp,
+            ),
+          );
+      for (final l in lines) {
+        final variantId = l['variant_id'] as String;
+        final quantity = l['quantity'] as int;
+        final resaleable = l['resaleable'] as bool;
+        await db
+            .into(db.saleReturnLines)
+            .insert(
+              SaleReturnLinesCompanion.insert(
+                returnId: request.id,
+                variantId: variantId,
+                quantity: quantity,
+                unitPrice: l['unit_price'] as int,
+                lineTotal: l['line_total'] as int,
+                resaleable: resaleable,
+              ),
+            );
+        if (resaleable) {
+          await db.customUpdate(
+            'UPDATE variants SET stock = stock + ? WHERE id = ?',
+            variables: [Variable(quantity), Variable(variantId)],
+            updates: {db.variants},
+          );
+          await _movement(
+            variantId,
+            'RETURN',
+            quantity,
+            actor,
+            'Retour ${sale.number}',
+            request.id,
+            timestamp,
+          );
+        }
+      }
+      final payload = {
+        'id': request.id,
+        'sale_id': sale.id,
+        'sale_number': sale.number,
+        'kind': kind,
+        'lines': [
+          for (final l in lines)
+            {
+              'variant_id': l['variant_id'],
+              'quantity': l['quantity'],
+              'unit_price': l['unit_price'],
+              'line_total': l['line_total'],
+              'resaleable': l['resaleable'],
+            },
+        ],
+        'refund_total': refund,
+        'refund_mode': request.refundMode.name,
+        'reason': motive,
+      };
+      await appendEvent(request.id, 'sale.returned', actor, timestamp, payload);
+      return {
+        ...payload,
+        'lines': lines,
+        'occurred_at': timestamp,
+        'actor': actor.name,
+      };
+    });
+  }
+
+  Future<Map<String, dynamic>> _returnView(SaleReturn r) async {
+    final sale = await (db.select(
+      db.sales,
+    )..where((s) => s.id.equals(r.saleId))).getSingle();
+    final soldLines = {
+      for (final line in (jsonDecode(sale.snapshot) as Map)['lines'] as List)
+        line['variant_id'] as String: line as Map,
+    };
+    final rows = await (db.select(
+      db.saleReturnLines,
+    )..where((l) => l.returnId.equals(r.id))).get();
+    return {
+      'id': r.id,
+      'sale_id': r.saleId,
+      'sale_number': sale.number,
+      'kind': r.kind,
+      'lines': [
+        for (final l in rows)
+          {
+            'variant_id': l.variantId,
+            'name': soldLines[l.variantId]?['name'],
+            'label': soldLines[l.variantId]?['label'],
+            'sku': soldLines[l.variantId]?['sku'],
+            'quantity': l.quantity,
+            'unit_price': l.unitPrice,
+            'line_total': l.lineTotal,
+            'resaleable': l.resaleable,
+          },
+      ],
+      'refund_total': r.refundTotal,
+      'refund_mode': r.refundMode,
+      'reason': r.reason,
+      'occurred_at': r.occurredAt,
+      'actor': r.actorName,
+    };
   }
 
   static Map<String, Object?> _correction(SaleCorrection c) => {

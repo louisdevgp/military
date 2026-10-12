@@ -23,7 +23,7 @@ Chaque lot : implémenter → exécuter les contrôles → corriger → consigne
 Lots à réaliser, dans cet ordre, chacun validé (analyse, tests, PostgreSQL, APK) avant le suivant :
 
 1. ✅ (0.8.0) Mouvements de stock : réception, perte, correction, inventaire (quantité comptée et écart tracés), seuil de stock faible, désactivation/réactivation, historique par variante.
-2. Retours et annulations : annulation complète, retour partiel cumulé borné, remboursement unique, revendable/endommagé.
+2. ✅ (0.9.0) Retours et annulations : annulation complète, retour partiel cumulé borné, remboursement unique, revendable/endommagé.
 3. Dépenses, rapports (jour, semaine, mois, année, période libre, fuseau Africa/Abidjan), alertes stock, export CSV, clôture de caisse.
 4. Synchronisation automatique et réglages serveur conservés de façon sécurisée.
 5. Sauvegarde et restauration (base et photos), réconciliation des séquences.

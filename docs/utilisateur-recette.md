@@ -14,6 +14,10 @@ L’écran affiche en permanence « Recette · <utilisateur> · <imprimante> ».
 - Les boutons **Montant exact** et billets ronds évitent la saisie. Si la monnaie à rendre atteint le total ou 50 000 FCFA, l’application demande de vérifier la somme avant de valider.
 - Après la vente, seul un administrateur peut **corriger le paiement** depuis l’historique (icône crayon) : mode de paiement ou somme réellement remise, avec un motif obligatoire. La vente d’origine reste dans l’historique ; le duplicata affiche le paiement corrigé et la mention « Paiement corrigé le … ». Le total et les articles ne se corrigent pas ainsi : une annulation ou un retour sera une opération distincte.
 
+## Retour, remboursement, annulation
+
+Administrateur : **Historique** → menu ⋮ de la vente → **Retour ou annulation**. Indiquer la quantité rendue par article (+/−), choisir **Revendable** (remis en stock) ou **Endommagé** (pas remis en vente), le mode de remboursement et le motif, puis **Rembourser**. **Annuler la vente** rembourse tout ce qui n'a pas encore été rendu. Un ticket de remboursement s'imprime. On ne peut jamais rendre plus que la quantité vendue ni annuler deux fois ; la vente reste dans l'historique avec la mention du retour.
+
 ## Stock
 
 Administrateur : **Administration → Stock**. Toucher une variante pour enregistrer une **Réception** (marchandise reçue), une **Perte** (casse, vol) ou une **Correction** (+ ou −), toujours avec un motif ; régler le **seuil d'alerte** (badge « Stock faible » au catalogue) ; **Désactiver** une variante qui ne se vend plus (elle disparaît de la caisse, son historique reste) ; consulter l'**historique**. Le stock ne peut jamais devenir négatif.

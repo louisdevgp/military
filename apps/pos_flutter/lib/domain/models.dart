@@ -273,6 +273,37 @@ class SaleRequest {
   };
 }
 
+/// Return or full cancellation of a recorded sale. [id] is the operation
+/// UUID: a repeated request with the same content refunds only once.
+class ReturnRequest {
+  ReturnRequest({
+    required this.id,
+    required this.saleId,
+    required Map<String, ({int quantity, bool resaleable})> lines,
+    required this.refundMode,
+    required this.reason,
+    this.cancel = false,
+  }) : lines = Map.unmodifiable(lines);
+  final String id, saleId, reason;
+  final Map<String, ({int quantity, bool resaleable})> lines;
+  final PaymentMode refundMode;
+
+  /// Cancels every quantity not returned yet; [lines] then only carries the
+  /// resaleable flags.
+  final bool cancel;
+
+  Map<String, Object?> toJson() => {
+    'sale_id': saleId,
+    'cancel': cancel,
+    'refund_mode': refundMode.name,
+    'reason': reason.trim(),
+    'lines': {
+      for (final e in lines.entries)
+        e.key: {'quantity': e.value.quantity, 'resaleable': e.value.resaleable},
+    },
+  };
+}
+
 Object? canonical(Object? value) {
   if (value is Map) {
     final keys = value.keys.cast<String>().toList()..sort();

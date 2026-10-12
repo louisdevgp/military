@@ -68,6 +68,16 @@ void main() {
       ),
     );
     await repo.changePrice(actor, id, 14000);
+    await repo.returnSale(
+      actor,
+      ReturnRequest(
+        id: const Uuid().v4(),
+        saleId: sale['id'] as String,
+        lines: {id: (quantity: 1, resaleable: true)},
+        refundMode: PaymentMode.cash,
+        reason: 'Retour TEST',
+      ),
+    );
     await repo.moveStock(
       actor,
       id,
@@ -100,9 +110,10 @@ void main() {
         'corrections': 1,
         'actors': 2,
         'variants': 3,
+        'refunded': 12500,
       },
     };
-    expect(fixture['events'], hasLength(12));
+    expect(fixture['events'], hasLength(13));
     if (const bool.fromEnvironment('EXPORT_CONTRACT')) {
       final file = File('../../contracts/vertical_v1.json');
       await file.parent.create(recursive: true);

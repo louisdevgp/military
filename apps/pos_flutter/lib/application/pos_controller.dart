@@ -347,6 +347,48 @@ class PosController extends Notifier<PosState> {
     }
   }
 
+  /// Records a return or cancellation, then prints the refund ticket. The
+  /// screen keeps the same operation id on retry, so a refund happens once.
+  Future<bool> returnSale(ReturnRequest request) async {
+    if (state.busy) return false;
+    state = state.copy(busy: true);
+    Map<String, dynamic> operation;
+    try {
+      operation = await repo.returnSale(actor, request);
+    } on BusinessException catch (e) {
+      state = state.copy(busy: false, message: e.message);
+      return false;
+    } catch (_) {
+      state = state.copy(
+        busy: false,
+        message: 'Retour non confirmé. Réessayez sans modifier la saisie.',
+      );
+      return false;
+    }
+    final receipt = buildReturnReceipt(
+      operation,
+      settings: state.receiptSettings,
+    );
+    state = state.copy(receipt: receipt);
+    var message =
+        '${request.cancel ? 'Vente annulée' : 'Retour enregistré'} : ${fcfa(operation['refund_total'] as int)} à rembourser.';
+    try {
+      final outcome = await ref.read(printerProvider).printReceipt(receipt);
+      if (outcome == PrintOutcome.simulated) {
+        message = '$message Ticket simulé.';
+      }
+    } catch (e) {
+      message = '$message Ticket non imprimé${_code(e)}.';
+    }
+    try {
+      await refresh();
+    } catch (_) {
+      message = '$message Actualisation impossible.';
+    }
+    state = state.copy(busy: false, message: message);
+    return true;
+  }
+
   /// Reception, loss or correction typed by the administrator.
   Future<bool> moveStock(
     String variantId,

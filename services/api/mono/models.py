@@ -123,3 +123,32 @@ class SaleCorrection(Base):
     reason: Mapped[str] = mapped_column(String(200))
     actor_id: Mapped[str] = mapped_column(ForeignKey("actors.id"))
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SaleReturn(Base):
+    """Return or cancellation linked to an immutable sale."""
+
+    __tablename__ = "sale_returns"
+    __table_args__ = (
+        CheckConstraint("kind IN ('RETURN','CANCEL')", name="valid_return_kind"),
+        CheckConstraint("refund_total >= 0", name="nonnegative_refund"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sale_id: Mapped[str] = mapped_column(ForeignKey("sales.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    refund_total: Mapped[int] = mapped_column(BigInteger)
+    refund_mode: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(200))
+    actor_id: Mapped[str] = mapped_column(ForeignKey("actors.id"))
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SaleReturnLine(Base):
+    __tablename__ = "sale_return_lines"
+    __table_args__ = (CheckConstraint("quantity > 0", name="positive_return_quantity"),)
+    return_id: Mapped[str] = mapped_column(ForeignKey("sale_returns.id"), primary_key=True)
+    variant_id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    quantity: Mapped[int] = mapped_column(BigInteger)
+    unit_price: Mapped[int] = mapped_column(BigInteger)
+    line_total: Mapped[int] = mapped_column(BigInteger)
+    resaleable: Mapped[bool] = mapped_column(Boolean)

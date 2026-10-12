@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import ValidationError
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from mono.models import (
@@ -15,6 +15,8 @@ from mono.models import (
     Product,
     Sale,
     SaleCorrection,
+    SaleReturn,
+    SaleReturnLine,
     Terminal,
     Variant,
 )
@@ -26,6 +28,7 @@ from mono.schemas import (
     PriceChanged,
     ReceiptSettingsUpdated,
     SaleCompleted,
+    SaleReturned,
     StockMoved,
     UserCreated,
     UserPinReset,
@@ -96,6 +99,8 @@ def apply_event(session: Session, incoming: Envelope) -> Acknowledgement:
             target_user(session, payload.user_id).active = payload.active
         elif incoming.kind == "user.pin_reset":
             target_user(session, UserPinReset.model_validate(incoming.payload).user_id)
+        elif incoming.kind == "sale.returned":
+            return_sale(session, incoming, SaleReturned.model_validate(incoming.payload))
         elif incoming.kind == "stock.moved":
             move_stock(session, incoming, StockMoved.model_validate(incoming.payload))
         elif incoming.kind == "variant.updated":
@@ -153,6 +158,79 @@ def target_user(session: Session, user_id: str) -> Actor:
     if user is None:
         raise SyncError("USER_MISSING")
     return user
+
+
+def return_sale(session: Session, event: Envelope, data: SaleReturned) -> None:
+    if data.id != event.id:
+        raise SyncError("RETURN_IDENTITY_MISMATCH")
+    sale = session.get(Sale, str(data.sale_id))
+    if sale is None:
+        raise SyncError("SALE_MISSING")
+    if sale.number != data.sale_number:
+        raise SyncError("SALE_IDENTITY_MISMATCH")
+    sold = {line["variant_id"]: line for line in sale.snapshot["lines"]}
+    returned = dict(
+        session.execute(
+            select(SaleReturnLine.variant_id, func.sum(SaleReturnLine.quantity))
+            .join(SaleReturn, SaleReturn.id == SaleReturnLine.return_id)
+            .where(SaleReturn.sale_id == sale.id)
+            .group_by(SaleReturnLine.variant_id)
+        ).all()
+    )
+    if len({str(line.variant_id) for line in data.lines}) != len(data.lines):
+        raise SyncError("DUPLICATE_LINE")
+    session.add(
+        SaleReturn(
+            id=str(data.id),
+            sale_id=sale.id,
+            kind=data.kind,
+            refund_total=data.refund_total,
+            refund_mode=data.refund_mode,
+            reason=data.reason,
+            actor_id=event.actor_id,
+            occurred_at=event.occurred_at.astimezone(UTC),
+        )
+    )
+    session.flush()
+    total = 0
+    for line in data.lines:
+        variant_id = str(line.variant_id)
+        original = sold.get(variant_id)
+        if original is None or line.unit_price != original["unit_price"]:
+            raise SyncError("RETURN_LINE_MISMATCH")
+        if line.line_total != line.quantity * line.unit_price:
+            raise SyncError("LINE_TOTAL_MISMATCH")
+        if returned.get(variant_id, 0) + line.quantity > original["quantity"]:
+            raise SyncError("RETURN_EXCEEDS_SALE")
+        total += line.line_total
+        session.add(
+            SaleReturnLine(
+                return_id=str(data.id),
+                variant_id=variant_id,
+                quantity=line.quantity,
+                unit_price=line.unit_price,
+                line_total=line.line_total,
+                resaleable=line.resaleable,
+            )
+        )
+        if line.resaleable:
+            session.execute(
+                update(Variant)
+                .where(Variant.id == variant_id)
+                .values(stock=Variant.stock + line.quantity)
+            )
+            movement(session, event, variant_id, "RETURN", line.quantity, f"Retour {sale.number}")
+    if data.refund_total != total:
+        raise SyncError("TOTAL_MISMATCH")
+    if data.kind == "CANCEL":
+        left = {
+            v: line["quantity"] - returned.get(v, 0)
+            for v, line in sold.items()
+            if line["quantity"] - returned.get(v, 0) > 0
+        }
+        sent = {str(line.variant_id): line.quantity for line in data.lines}
+        if sent != left:
+            raise SyncError("CANCEL_INCOMPLETE")
 
 
 def move_stock(session: Session, event: Envelope, data: StockMoved) -> None:

@@ -114,6 +114,40 @@ class SaleCorrections extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Return or cancellation linked to a sale (schema v7). The sale itself is
+/// never modified; cumulative returns are bounded by the quantities sold.
+class SaleReturns extends Table {
+  TextColumn get id => text()();
+  TextColumn get saleId => text().references(Sales, #id)();
+  TextColumn get kind => text().check(
+    const CustomExpression<bool>("kind IN ('RETURN', 'CANCEL')"),
+  )();
+  IntColumn get refundTotal =>
+      integer().check(const CustomExpression<bool>('refund_total >= 0'))();
+  TextColumn get refundMode => text()();
+  TextColumn get reason => text()();
+  TextColumn get requestHash => text()();
+  TextColumn get actorId => text()();
+  TextColumn get actorName => text()();
+  TextColumn get occurredAt => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class SaleReturnLines extends Table {
+  TextColumn get returnId => text().references(SaleReturns, #id)();
+  TextColumn get variantId => text()();
+  IntColumn get quantity =>
+      integer().check(const CustomExpression<bool>('quantity > 0'))();
+  IntColumn get unitPrice => integer()();
+  IntColumn get lineTotal => integer()();
+
+  /// Resaleable items go back to stock; damaged ones do not.
+  BoolColumn get resaleable => boolean()();
+  @override
+  Set<Column> get primaryKey => {returnId, variantId};
+}
+
 /// Shop settings edited by the administrator (receipt identity, logo).
 class ShopSettings extends Table {
   TextColumn get key => text()();
@@ -145,6 +179,8 @@ class TerminalStates extends Table {
     Users,
     SaleCorrections,
     ShopSettings,
+    SaleReturns,
+    SaleReturnLines,
   ],
 )
 class PosDatabase extends _$PosDatabase {
@@ -152,7 +188,7 @@ class PosDatabase extends _$PosDatabase {
     : super(executor ?? driftDatabase(name: 'mono_recette_v1'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   Future<void> _createLocalPhotoTable() => customStatement('''
     CREATE TABLE local_product_photos (
@@ -162,6 +198,10 @@ class PosDatabase extends _$PosDatabase {
       PRIMARY KEY(product_id, position)
     )
   ''');
+
+  Future<void> _createReturnIndex() => customStatement(
+    'CREATE INDEX sale_returns_sale_idx ON sale_returns(sale_id, occurred_at)',
+  );
 
   Future<void> _createCorrectionIndex() => customStatement(
     'CREATE INDEX sale_corrections_sale_idx ON sale_corrections(sale_id, occurred_at)',
@@ -182,12 +222,13 @@ class PosDatabase extends _$PosDatabase {
         'CREATE INDEX sales_date_idx ON sales(occurred_at)',
       );
       await _createCorrectionIndex();
+      await _createReturnIndex();
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
     onUpgrade: (m, from, to) async {
-      if (from < 1 || to != 6) {
+      if (from < 1 || to != 7) {
         throw StateError('Migration non prise en charge : $from → $to.');
       }
       // Additive steps only: existing sales, stock and outbox stay untouched.
@@ -205,6 +246,11 @@ class PosDatabase extends _$PosDatabase {
       if (from < 6) {
         await m.addColumn(variants, variants.threshold);
         await m.addColumn(stockMovements, stockMovements.counted);
+      }
+      if (from < 7) {
+        await m.createTable(saleReturns);
+        await m.createTable(saleReturnLines);
+        await _createReturnIndex();
       }
     },
   );

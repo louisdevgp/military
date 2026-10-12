@@ -117,6 +117,15 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Flutter : analyse sans anomalie, **46 tests réussis** (dont parcours écran Stock). Contrat régénéré (12 événements). API : **23 réussis sur PostgreSQL 18.6**, 22 + 1 ignoré sur SQLite ; base de contrôle en `0005 (head)`.
 - APK 0.8.0+12 mis à jour par USB (`adb -s H10P736253F0010 install -r`, données conservées). Artefact `livrables/mono-recette-0.8.0-debug.apk`, SHA-256 `CEDD1780AEA3D121C182C69A918F4D1EDD525B44CBAA53AC664524AEFFCAED6A`. Essai sur l'appareil : à faire par l'utilisateur.
 
+## Incrément 0.9.0+13 — retours et annulations (lot 2)
+
+- Historique (administrateur) : menu **Actions sur la vente** → **Retour ou annulation**. Retour partiel par quantité, cumul borné à la quantité vendue ; article **revendable** (remis en stock, mouvement RETURN) ou **endommagé** (non remis en vente) ; **Annuler la vente** rembourse tout ce qui reste ; motif obligatoire ; mode de remboursement. Ticket **REMBOURSEMENT / ANNULATION** imprimé ; le duplicata de la vente indique « VENTE ANNULÉE » ou « RETOUR PARTIEL » et le montant remboursé. La vente n'est jamais modifiée.
+- Idempotence par identifiant d'opération (rejeu identique = même résultat, contenu différent = conflit) ; double annulation et dépassement refusés localement et par le serveur (`RETURN_EXCEEDS_SALE`, prix et totaux recontrôlés, annulation exacte du reste `CANCEL_INCOMPLETE`).
+- SQLite v7 (`sale_returns`, `sale_return_lines`), Alembic 0006 avec RLS. Événement `sale.returned`.
+- Correctif d'affichage trouvé par les tests : ligne de l'historique et ligne de quantité du retour débordaient sur les 360 dp du H10 (actions regroupées dans un menu, puce revendable/endommagé sur sa ligne).
+- Flutter : analyse sans anomalie, **48 tests réussis**. Contrat régénéré (13 événements, dont un retour). API : **24 réussis sur PostgreSQL 18.6**, 23 + 1 ignoré sur SQLite ; base de contrôle en `0006 (head)`.
+- APK 0.9.0+13 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.9.0-debug.apk`, SHA-256 `3D7BBACACDC3051ED007DBCF46E800F2E1DC9A70151E282AC366BFA8965518A3`. Essai sur l'appareil : à faire par l'utilisateur.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

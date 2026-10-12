@@ -229,30 +229,13 @@ String _date(String iso) {
   return '${two(d.day)}/${two(d.month)}/${d.year} ${two(d.hour)}:${two(d.minute)}';
 }
 
-Receipt buildReceipt(
-  Map<String, dynamic> sale, {
+List<ReceiptBlock> _header(
+  ReceiptSettings settings, {
   bool duplicate = false,
-  ReceiptSettings settings = const ReceiptSettings(),
+  String? title,
 }) {
-  const l = ReceiptAlign.left, c = ReceiptAlign.center, r = ReceiptAlign.right;
-  final customer = (sale['customer'] as Map).cast<String, String>();
-  // A corrected payment replaces the declared one on duplicates.
-  final correction = sale['correction'] as Map<String, dynamic>?;
-  final payment = correction ?? sale;
-  final mode = PaymentMode.values.byName(payment['payment_mode'] as String);
-  final local = DateTime.parse(sale['occurred_at'] as String)
-      .toUtc(); // Africa/Abidjan = UTC+0
-  String two(int n) => n.toString().padLeft(2, '0');
-  final date = '${two(local.day)}/${two(local.month)}/${local.year}';
-  final time = '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
-  final who = [
-    customer['name'],
-    customer['first_name'],
-  ].whereType<String>().where((s) => s.isNotEmpty).join(' ').toUpperCase();
-  final unit = (customer['unit'] ?? '').toUpperCase();
-  final phone = customer['phone'] ?? '';
-
-  final blocks = <ReceiptBlock>[
+  const c = ReceiptAlign.center;
+  return [
     if (settings.logo == LogoChoice.original)
       const ReceiptLogo(originalLogoAsset)
     else if (settings.logo == LogoChoice.custom && settings.logoFile != null)
@@ -278,6 +261,73 @@ Receipt buildReceipt(
         bold: true,
         size: ReceiptSize.large,
       ),
+    if (title != null)
+      ReceiptText(title, align: c, bold: true, size: ReceiptSize.large),
+  ];
+}
+
+List<ReceiptBlock> _table(List lines) => [
+  ReceiptRow(
+    ['DESIGNATION', 'P.U', 'Qte', 'MONTANT'],
+    tableWeights,
+    tableAligns,
+    bold: true,
+    size: tableSize,
+  ),
+  for (final line in lines)
+    ...() {
+      final designation = '${line['name']} ${line['label']}'.toUpperCase();
+      final values = [
+        amount(line['unit_price'] as int),
+        '${line['quantity']}',
+        amount(line['line_total'] as int),
+      ];
+      return designation.length <= designationChars
+          ? [
+              ReceiptRow(
+                [designation, ...values],
+                tableWeights,
+                tableAligns,
+                size: tableSize,
+              ),
+            ]
+          : [
+              ReceiptText(designation, size: tableSize),
+              ReceiptRow(
+                ['', ...values],
+                tableWeights,
+                tableAligns,
+                size: tableSize,
+              ),
+            ];
+    }(),
+];
+
+Receipt buildReceipt(
+  Map<String, dynamic> sale, {
+  bool duplicate = false,
+  ReceiptSettings settings = const ReceiptSettings(),
+}) {
+  const l = ReceiptAlign.left, c = ReceiptAlign.center, r = ReceiptAlign.right;
+  final customer = (sale['customer'] as Map).cast<String, String>();
+  // A corrected payment replaces the declared one on duplicates.
+  final correction = sale['correction'] as Map<String, dynamic>?;
+  final payment = correction ?? sale;
+  final mode = PaymentMode.values.byName(payment['payment_mode'] as String);
+  final local = DateTime.parse(sale['occurred_at'] as String)
+      .toUtc(); // Africa/Abidjan = UTC+0
+  String two(int n) => n.toString().padLeft(2, '0');
+  final date = '${two(local.day)}/${two(local.month)}/${local.year}';
+  final time = '${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
+  final who = [
+    customer['name'],
+    customer['first_name'],
+  ].whereType<String>().where((s) => s.isNotEmpty).join(' ').toUpperCase();
+  final unit = (customer['unit'] ?? '').toUpperCase();
+  final phone = customer['phone'] ?? '';
+
+  final blocks = <ReceiptBlock>[
+    ..._header(settings, duplicate: duplicate),
     const ReceiptFeed(),
     if (who.isNotEmpty || unit.isNotEmpty)
       ReceiptRow([who, unit], [3, 2], [l, r]),
@@ -286,40 +336,7 @@ Receipt buildReceipt(
     ReceiptRow([date, time], [1, 1], [l, r]),
     ReceiptText('Vendeur : ${sale['seller']}', size: ReceiptSize.small),
     const ReceiptFeed(),
-    ReceiptRow(
-      ['DESIGNATION', 'P.U', 'Qte', 'MONTANT'],
-      tableWeights,
-      tableAligns,
-      bold: true,
-      size: tableSize,
-    ),
-    for (final line in sale['lines'] as List)
-      ...() {
-        final designation = '${line['name']} ${line['label']}'.toUpperCase();
-        final values = [
-          amount(line['unit_price'] as int),
-          '${line['quantity']}',
-          amount(line['line_total'] as int),
-        ];
-        return designation.length <= designationChars
-            ? [
-                ReceiptRow(
-                  [designation, ...values],
-                  tableWeights,
-                  tableAligns,
-                  size: tableSize,
-                ),
-              ]
-            : [
-                ReceiptText(designation, size: tableSize),
-                ReceiptRow(
-                  ['', ...values],
-                  tableWeights,
-                  tableAligns,
-                  size: tableSize,
-                ),
-              ];
-      }(),
+    ..._table(sale['lines'] as List),
     const ReceiptFeed(),
     ReceiptRow(['TOTAL FACTURE', amountCfa(sale['total'] as int)], [1, 1], [
       r,
@@ -347,6 +364,22 @@ Receipt buildReceipt(
         align: r,
         size: ReceiptSize.small,
       ),
+    if (sale['returns'] case final Map<String, dynamic> returns) ...[
+      const ReceiptFeed(),
+      ReceiptText(
+        returns['complete'] == true
+            ? (returns['cancelled'] == true
+                  ? 'VENTE ANNULÉE'
+                  : 'VENTE ENTIÈREMENT RETOURNÉE')
+            : 'RETOUR PARTIEL',
+        align: c,
+        bold: true,
+      ),
+      ReceiptRow(['REMBOURSÉ', amountCfa(returns['refunded'] as int)], [1, 1], [
+        r,
+        r,
+      ], bold: true),
+    ],
     const ReceiptFeed(),
     if (settings.footer.isNotEmpty)
       ReceiptText(settings.footer, align: c, size: ReceiptSize.small),
@@ -393,3 +426,51 @@ Receipt buildTestReceipt({
   'tendered': 1300000,
   'change': 25000,
 }, settings: settings);
+
+/// Refund ticket for a return or a cancellation.
+Receipt buildReturnReceipt(
+  Map<String, dynamic> operation, {
+  ReceiptSettings settings = const ReceiptSettings(),
+}) {
+  const l = ReceiptAlign.left, c = ReceiptAlign.center, r = ReceiptAlign.right;
+  final cancel = operation['kind'] == 'CANCEL';
+  final mode = PaymentMode.values.byName(operation['refund_mode'] as String);
+  final lines = operation['lines'] as List;
+  final blocks = <ReceiptBlock>[
+    ..._header(settings, title: cancel ? 'ANNULATION' : 'REMBOURSEMENT'),
+    const ReceiptFeed(),
+    ReceiptText('N° FACTURE : ${operation['sale_number']}'),
+    ReceiptText(_date(operation['occurred_at'] as String)),
+    ReceiptText('Opérateur : ${operation['actor']}', size: ReceiptSize.small),
+    const ReceiptFeed(),
+    ..._table(lines),
+    for (final line in lines)
+      if (line['resaleable'] == false)
+        ReceiptText(
+          'Endommagé : ${line['name']} ${line['label']}'.toUpperCase(),
+          size: ReceiptSize.small,
+        ),
+    const ReceiptFeed(),
+    ReceiptRow(
+      ['TOTAL REMBOURSÉ', amountCfa(operation['refund_total'] as int)],
+      [1, 1],
+      [r, r],
+      bold: true,
+    ),
+    ReceiptRow(['MODE', ticketPaymentLabel(mode)], [1, 1], [r, r], bold: true),
+    ReceiptText(
+      'Motif : ${operation['reason']}',
+      align: l,
+      size: ReceiptSize.small,
+    ),
+    const ReceiptFeed(),
+    if (settings.footer.isNotEmpty)
+      ReceiptText(settings.footer, align: c, size: ReceiptSize.small),
+    const ReceiptFeed(3),
+  ];
+  return Receipt(
+    blocks,
+    number: operation['sale_number'] as String,
+    duplicate: false,
+  );
+}

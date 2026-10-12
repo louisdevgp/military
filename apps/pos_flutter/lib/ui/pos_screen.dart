@@ -12,6 +12,7 @@ import 'auth_screens.dart';
 import 'payment_screen.dart';
 import 'receipt_preview.dart';
 import 'receipt_settings_screen.dart';
+import 'return_screen.dart';
 import 'stock_screen.dart';
 
 class PosScreen extends ConsumerStatefulWidget {
@@ -788,19 +789,55 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                              if (sale['returns'] case final Map returns)
+                                Text(
+                                  returns['complete'] == true
+                                      ? (returns['cancelled'] == true
+                                            ? 'Annulée · ${fcfa(returns['refunded'] as int)} remboursés'
+                                            : 'Entièrement retournée · ${fcfa(returns['refunded'] as int)} remboursés')
+                                      : 'Retour partiel · ${fcfa(returns['refunded'] as int)} remboursés',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.red.shade800,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
+                        // One menu keeps the row within the H10's 360 dp.
                         if (_admin)
-                          IconButton(
-                            tooltip: 'Corriger le paiement',
-                            onPressed: state.busy
-                                ? null
-                                : () => _correctPayment(sale),
+                          PopupMenuButton<String>(
+                            tooltip: 'Actions sur la vente',
+                            enabled: !state.busy,
                             icon: const Icon(
-                              Icons.edit_note_outlined,
+                              Icons.more_vert,
                               color: MonoColors.muted,
                             ),
+                            onSelected: (action) async {
+                              if (action == 'correct') {
+                                return _correctPayment(sale);
+                              }
+                              final done = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => ReturnScreen(sale),
+                                ),
+                              );
+                              if (done == true && mounted) _receipt();
+                            },
+                            itemBuilder: (_) => [
+                              if ((sale['returns'] as Map?)?['complete'] !=
+                                  true)
+                                const PopupMenuItem(
+                                  value: 'return',
+                                  child: Text('Retour ou annulation'),
+                                ),
+                              const PopupMenuItem(
+                                value: 'correct',
+                                child: Text('Corriger le paiement'),
+                              ),
+                            ],
                           ),
                         IconButton(
                           tooltip: 'Aperçu du duplicata',
