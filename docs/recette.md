@@ -133,6 +133,12 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Flutter : **48 tests réussis** (+1 de rendu ignoré par défaut). APK 0.9.1+14 mis à jour par USB, données conservées. Artefact `livrables/mono-recette-0.9.1-debug.apk`, SHA-256 `6C609644EE1CC78C8CB02AF60C355C5660A382CBFAABC5FF66DD11EDFB7B36E2`.
 - Code poussé sur `git@github.com:louisdevgp/military.git`, branche `main`.
 
+## 12 octobre 2026 — déploiement de recette en ligne et intervention sur l'accès administrateur
+
+- API Render en ligne (`https://mono-api-recette.onrender.com`) reliée à Supabase (Frankfurt, session pooler) : `/health/live` et `/health/ready` OK, synchronisation sans jeton refusée (401), catalogue public vide. Deux corrections pendant le déploiement : URI `postgresql://` acceptée (pilote psycopg) ; URL mal formée refusée sans être affichée (un mot de passe non encodé avait fait apparaître une partie du mot de passe dans les journaux Render : mot de passe Supabase réinitialisé).
+- APK 0.9.1 recompilé depuis `0797ea2` et mis à jour sur le H10 (données conservées). État avant synchronisation : 10 opérations en attente, terminal `c4fc8f41-…`.
+- **Intervention hors application** à la demande de l'utilisateur : l'administrateur était bloqué (6 erreurs de PIN) et l'application n'offre aucune récupération du code administrateur. Base sauvegardée sur le PC (`.artifacts/backups/`, non versionné), puis, application arrêtée, seul le compte administrateur modifié via `run-as` : nouveau PIN provisoire (PBKDF2-HMAC-SHA256, 20 000 itérations, sel aléatoire), compteur d'erreurs remis à zéro, blocage levé. Intégrité SQLite OK, opérations en attente inchangées, base recopiée vérifiée par empreinte. **Aucun événement d'audit n'a été produit pour cette modification.** Code provisoire communiqué à l'utilisateur, à remplacer depuis Utilisateurs → Nouveau code PIN.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).
