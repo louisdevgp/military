@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../backup/backup_platform.dart';
+import '../backup/backup_service.dart';
+import '../backup/reconciler.dart';
 import '../data/finance_repository.dart';
 import '../data/pos_repository.dart';
 import '../data/settings_repository.dart';
@@ -21,6 +26,19 @@ final repositoryProvider = Provider<PosRepository>(
   (ref) => throw StateError('Base non initialisée'),
 );
 final printerProvider = Provider<PrinterService>((ref) => SimulatedPrinter());
+final backupPlatformProvider = Provider<BackupPlatform>(
+  (ref) => const AndroidBackupPlatform(),
+);
+
+/// Private directories used by backups (temporary snapshot, staging).
+final backupDirsProvider = Provider<Future<(Directory, Directory)> Function()>(
+  (ref) =>
+      () async => (
+        await getTemporaryDirectory(),
+        await getApplicationDocumentsDirectory(),
+      ),
+);
+
 final exportProvider = Provider<ExportService>(
   (ref) => const AndroidExportService(),
 );
@@ -67,6 +85,8 @@ class PosState {
     this.syncOrigin,
     this.autoSync = true,
     this.syncing = false,
+    this.reconcileRequired = false,
+    this.lastBackupAt,
   });
   final List<CatalogItem> items;
   final Map<String, int> cart;
@@ -83,6 +103,10 @@ class PosState {
   final SyncStatus syncStatus;
   final String? syncOrigin;
   final bool autoSync, syncing;
+
+  /// Restored terminal not yet caught up with the server: no new operation.
+  final bool reconcileRequired;
+  final String? lastBackupAt;
   int get cartQuantity => cart.values.fold(0, (sum, value) => sum + value);
   int get total => cart.entries.fold(
     0,
@@ -103,6 +127,8 @@ class PosState {
     String? Function()? syncOrigin,
     bool? autoSync,
     bool? syncing,
+    bool? reconcileRequired,
+    String? lastBackupAt,
   }) => PosState(
     items: items ?? this.items,
     cart: cart ?? this.cart,
@@ -118,6 +144,8 @@ class PosState {
     syncOrigin: syncOrigin == null ? this.syncOrigin : syncOrigin(),
     autoSync: autoSync ?? this.autoSync,
     syncing: syncing ?? this.syncing,
+    reconcileRequired: reconcileRequired ?? this.reconcileRequired,
+    lastBackupAt: lastBackupAt ?? this.lastBackupAt,
   );
 }
 
@@ -146,6 +174,102 @@ class PosController extends Notifier<PosState> {
 
   SecureStore get _store => ref.read(secureStoreProvider);
 
+  Future<String?> _setting(String key) async => (await (repo.db.select(
+    repo.db.shopSettings,
+  )..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
+
+  Future<BackupService> _backups() async {
+    final (temp, _) = await ref.read(backupDirsProvider)();
+    return BackupService(
+      repo,
+      ref.read(backupPlatformProvider),
+      workDir: Directory('${temp.path}/backup'),
+    );
+  }
+
+  /// Encrypted backup saved where the administrator chooses.
+  Future<bool> exportBackup(String passphrase, String confirmation) =>
+      _run(() async {
+        if (passphrase != confirmation) {
+          throw const BusinessException(
+            'Les deux mots de passe sont différents.',
+          );
+        }
+        final saved = await (await _backups()).exportBackup(actor, passphrase);
+        return saved
+            ? 'Sauvegarde enregistrée. Gardez le mot de passe en lieu sûr : sans lui, elle est illisible.'
+            : 'Sauvegarde annulée.';
+      });
+
+  /// Verifies and stages a backup, then restarts the app to apply it.
+  /// Allowed without login only on a terminal that is not activated yet.
+  Future<bool> restoreBackup(String passphrase) async {
+    if (state.busy) return false;
+    state = state.copy(busy: true);
+    try {
+      final platform = ref.read(backupPlatformProvider);
+      final sealed = await platform.open();
+      if (sealed == null) {
+        state = state.copy(busy: false, message: 'Restauration annulée.');
+        return false;
+      }
+      final (_, docs) = await ref.read(backupDirsProvider)();
+      final manifest = await (await _backups()).stageRestore(
+        sealed,
+        passphrase,
+        actor: ref.read(currentActorProvider),
+        docsDir: docs,
+      );
+      state = state.copy(
+        busy: false,
+        message:
+            'Sauvegarde du ${abidjanDate(manifest.createdAt)} vérifiée. Redémarrage…',
+      );
+      await Future<void>.delayed(const Duration(seconds: 2));
+      await platform.relaunch();
+      return true;
+    } on BusinessException catch (e) {
+      state = state.copy(busy: false, message: e.message);
+    } on PlatformException catch (e) {
+      state = state.copy(
+        busy: false,
+        message: e.code == 'BAD_PASSPHRASE'
+            ? 'Mot de passe incorrect ou fichier modifié.'
+            : (e.message ?? 'Restauration impossible.'),
+      );
+    } catch (_) {
+      state = state.copy(busy: false, message: 'Restauration impossible.');
+    }
+    return false;
+  }
+
+  /// Catches a restored terminal up with the server, then unblocks it.
+  Future<bool> reconcile() => _run(() async {
+    actor.requireAdmin();
+    final transport = _transport;
+    if (transport == null) {
+      throw const BusinessException(
+        'Enregistrez d’abord le serveur dans Synchronisation.',
+      );
+    }
+    await transport.wake();
+    final ReconcileResult r = await Reconciler(repo, transport).run();
+    final users = r.usersWithoutPin.isEmpty
+        ? ''
+        : ' Donnez un nouveau code PIN à : ${r.usersWithoutPin.join(', ')}.';
+    return 'Terminal réconcilié : ${r.applied} opération(s) récupérée(s), '
+        '${r.confirmed} confirmée(s), ${r.pending} à envoyer.$users';
+  });
+
+  /// Last resort when no server was ever used: unblocks without a check.
+  Future<bool> skipReconcile() => _run(() async {
+    actor.requireAdmin();
+    await (repo.db.delete(
+      repo.db.shopSettings,
+    )..where((s) => s.key.equals(reconcileKey))).go();
+    return 'Blocage levé sans réconciliation : si un serveur détient des opérations, la synchronisation sera refusée.';
+  });
+
   PosRepository get repo => ref.read(repositoryProvider);
   Future<void> refresh() async {
     if (!_configLoaded) {
@@ -166,6 +290,8 @@ class PosController extends Notifier<PosState> {
       lastSync: terminal.lastSyncAt,
       terminalId: terminal.terminalId,
       syncStatus: await repo.syncStatus(),
+      reconcileRequired: await _setting(reconcileKey) != null,
+      lastBackupAt: await _setting(lastBackupKey),
     );
     _scheduleSoon();
   }

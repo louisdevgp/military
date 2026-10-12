@@ -12,15 +12,17 @@ from sqlalchemy.orm import Session
 
 from mono.config import Settings
 from mono.database import open_engine
-from mono.models import Category, Product, Variant
+from mono.models import Category, Event, Product, Terminal, Variant
 from mono.reports import summary
 from mono.schemas import (
     Acknowledgement,
     Envelope,
+    EventPage,
     PublicCatalog,
     PublicProduct,
     PublicVariant,
     ReportSummary,
+    SyncState,
 )
 from mono.sync import SyncError, apply_event
 
@@ -103,6 +105,46 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             raise HTTPException(409, "DATABASE_CONFLICT") from exc
         except SQLAlchemyError as exc:
             raise HTTPException(503, "TRANSACTION_NOT_CONFIRMED") from exc
+
+    @app.get(
+        "/api/private/sync/state",
+        response_model=SyncState,
+        dependencies=[Depends(authorize)],
+    )
+    def sync_state() -> SyncState:
+        with Session(database) as session:
+            terminal = session.scalar(select(Terminal).where(Terminal.slot == 1))
+            if terminal is None or terminal.id != config.terminal_id:
+                raise HTTPException(403, "TERMINAL_NOT_AUTHORIZED")
+            return SyncState(
+                terminal_id=terminal.id,
+                last_sequence=terminal.last_sequence,
+                sale_sequence=terminal.sale_sequence,
+            )
+
+    @app.get(
+        "/api/private/sync/events",
+        response_model=EventPage,
+        dependencies=[Depends(authorize)],
+    )
+    def sync_events(
+        after: Annotated[int, Query(ge=0)] = 0,
+        limit: Annotated[int, Query(ge=1, le=200)] = 100,
+    ) -> EventPage:
+        with Session(database) as session:
+            terminal = session.scalar(select(Terminal).where(Terminal.slot == 1))
+            if terminal is None or terminal.id != config.terminal_id:
+                raise HTTPException(403, "TERMINAL_NOT_AUTHORIZED")
+            rows = session.scalars(
+                select(Event)
+                .where(Event.terminal_id == terminal.id, Event.sequence > after)
+                .order_by(Event.sequence)
+                .limit(limit)
+            ).all()
+            return EventPage(
+                events=[row.envelope for row in rows],
+                last_sequence=terminal.last_sequence,
+            )
 
     @app.get(
         "/api/private/reports/summary",

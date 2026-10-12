@@ -10,6 +10,7 @@ import 'edit_photos_screen.dart';
 import 'finance_screens.dart';
 import 'mono_theme.dart';
 import 'auth_screens.dart';
+import 'backup_screen.dart';
 import 'payment_screen.dart';
 import 'receipt_preview.dart';
 import 'receipt_settings_screen.dart';
@@ -138,6 +139,10 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => const CashClosingScreen()),
                 ),
+                'backup' => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BackupScreen()),
+                ),
                 'receipt' => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -180,6 +185,13 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   child: ListTile(
                     leading: Icon(Icons.point_of_sale_outlined),
                     title: Text('Clôture de caisse'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'backup',
+                  child: ListTile(
+                    leading: Icon(Icons.backup_outlined),
+                    title: Text('Sauvegarde'),
                   ),
                 ),
                 PopupMenuItem(
@@ -255,6 +267,15 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                 ),
               ),
             ),
+            if (state.reconcileRequired)
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: InlineNotice(
+                  'Restauration à terminer : ventes bloquées jusqu’à la réconciliation '
+                  '(Administration → Synchronisation).',
+                  error: true,
+                ),
+              ),
             if (state.busy) const LinearProgressIndicator(minHeight: 2),
             if (_openingError != null)
               Padding(

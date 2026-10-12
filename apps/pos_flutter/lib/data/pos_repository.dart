@@ -781,6 +781,16 @@ class PosRepository {
     String at,
     Map<String, Object?> payload,
   ) async {
+    // After a restore, nothing new may be numbered before the terminal has
+    // caught up with the operations the server already holds.
+    final blocked = await (db.select(
+      db.shopSettings,
+    )..where((s) => s.key.equals('reconcile_required'))).getSingleOrNull();
+    if (blocked != null) {
+      throw const BusinessException(
+        'Restauration à terminer : Administration → Synchronisation → Réconcilier.',
+      );
+    }
     final state = await terminal();
     final seq = state.eventSequence + 1;
     final envelope = {

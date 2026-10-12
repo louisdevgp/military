@@ -1,23 +1,55 @@
-# Sauvegarde et mise à jour — exigences avant production
+# Sauvegarde, restauration et mise à jour
 
-**La sauvegarde/restauration complète n’est pas implémentée dans cette première tranche.** Ne pas utiliser l’APK pour des opérations commerciales irremplaçables. Une synchronisation réussie ne sauvegarde pas les événements encore en attente ni tous les fichiers locaux.
+Synchronisation ≠ sauvegarde. Le serveur garde une copie des opérations synchronisées, mais ni les codes PIN (jamais transmis), ni les photos, ni les opérations encore en attente. La sauvegarde du terminal et celle de la base serveur sont donc complémentaires.
 
-## Politique à implémenter au lot continuité
+## 1. Sauvegarde du terminal (depuis 0.12.0)
 
-- Copie SQLite cohérente via mécanisme de sauvegarde, incluant données, outbox, UUID terminal, compteurs, paramètres et pièces jointes nécessaires. Une copie isolée du `.db` pendant l’activité n’est pas suffisante en présence d’un journal WAL.
-- Manifeste de version, empreintes d’intégrité, archive chiffrée, copie protégée hors du terminal. Définir avec l’exploitant fréquence, rétention et lieu de conservation.
-- Sauvegarde PostgreSQL planifiée avec `pg_dump`, copie protégée hors serveur et restauration d’essai dans une base distincte. Journalisation sans données personnelles.
-- Restauration réservée à l’administrateur authentifié, ventes arrêtées, sauvegarde préalable, vérification d’intégrité et de version. Ne pas fournir de bouton de restauration tant que ce protocole n’est pas implémenté et testé.
-- Réconciliation obligatoire avec le serveur : même terminal, mêmes UUID d’opérations, compareur de séquences et récupération des événements déjà reçus. Une sauvegarde ancienne ne devient jamais un nouveau terminal automatiquement.
+**Administration → Sauvegarde → Créer et enregistrer la sauvegarde** (administrateur).
 
-## Mise à jour Android
+- Copie cohérente de la base SQLite par `VACUUM INTO` (prise sans arrêter l'application, journal compris), plus les photos des articles et le logo personnalisé.
+- Manifeste : format, version de schéma, terminal, compteurs d'opérations et de ventes, date, empreintes SHA-256 de la base et de chaque fichier.
+- Archive chiffrée **AES-256-GCM**, clé dérivée du mot de passe de sauvegarde (PBKDF2-HMAC-SHA256, 210 000 itérations, sel aléatoire), en-tête authentifié. Mot de passe ≥ 10 caractères, jamais enregistré : **sans lui, la sauvegarde est illisible**.
+- Fichier `.monobak` enregistré **hors du terminal** via le sélecteur de documents Android (Drive, clé USB, PC) ; aucune permission de stockage.
+- Date de la dernière sauvegarde affichée ; événement d'audit `backup.created` synchronisé (l'archive ne part jamais vers le serveur).
 
-Installer avec `adb install -r` et la même identité de signature. Les numéros de version doivent croître. Conserver l’UUID terminal, les compteurs, les ventes, le stock et l’outbox. La première migration est figée dans le schéma version 1 ; les versions futures nécessitent un test depuis une base antérieure peuplée.
+Recommandation d'exploitation : une sauvegarde par jour après la clôture de caisse, conservée au moins 30 jours, dans deux lieux distincts ; mot de passe conservé séparément du fichier.
 
-L’incrément 0.2.0 ajoute une table de photos locales au schéma 2. Les fichiers `files/catalog_images` doivent être inclus dans la future sauvegarde : copier seulement la base SQLite ne copie pas les images. Le schéma 1 reste figé dans `drift_schemas/schema_v1.sql`.
+## 2. Restauration du terminal
 
-La clé debug permet uniquement les essais. La clé de production devra être générée et stockée hors dépôt, avec sauvegarde chiffrée et procédure d’accès. Aucun fallback automatique vers la clé debug n’est configuré en release.
+**Administration → Sauvegarde → Restaurer…** (administrateur), ou sur l'**écran d'activation** d'un terminal neuf (remplacement après perte ou panne).
 
-## Retour arrière
+1. Déchiffrement (mot de passe incorrect ou fichier modifié → refus), contrôle du format, refus d'une sauvegarde créée par une version plus récente, vérification des empreintes de la base et de chaque fichier.
+2. **Copie de sécurité** de l'état actuel du terminal (`app_flutter/safety/avant-restauration-<date>.sqlite`).
+3. Préparation, puis redémarrage : la base est remplacée **avant** son ouverture, l'intégrité SQLite est vérifiée, les photos sont remises en place.
+4. **Blocage** : toute nouvelle opération (vente, stock, dépense…) est refusée tant que le terminal n'est pas réconcilié.
 
-Ne pas rétrograder un schéma en effaçant des colonnes/données. Le `downgrade` initial Alembic refuse une opération destructive. Avant une mise à jour serveur, réaliser une sauvegarde validée, vérifier la compatibilité du binaire précédent avec le nouveau schéma et prévoir une restauration dans un environnement isolé. Aucune migration de production existante n’est autorisée par les scripts de cette tranche.
+## 3. Réconciliation avec le serveur
+
+**Administration → Synchronisation → Réconcilier maintenant** (serveur enregistré au préalable).
+
+- Le serveur fournit son état (dernière séquence, compteur de ventes) et les opérations reçues après la dernière opération synchronisée de la sauvegarde.
+- Une opération présente des deux côtés doit avoir le même identifiant : sinon **conflit**, le terminal reste bloqué.
+- Chaque opération absente de la sauvegarde est rejouée localement avec ses effets exacts (ventes, stock et mouvements, retours, corrections, dépenses, clôtures, articles, réglages).
+- Les compteurs reprennent après ceux du serveur : aucune séquence ni numéro `FACT` réutilisé.
+- Les comptes créés après la sauvegarde existent mais n'ont pas de code PIN (jamais transmis) : un administrateur doit leur en donner un.
+- Échappatoire : « Aucun serveur utilisé » lève le blocage sans contrôle, réservé à un terminal jamais synchronisé ; sinon la synchronisation sera refusée.
+
+## 4. Sauvegarde de la base serveur
+
+L'offre gratuite Supabase ne propose pas de sauvegarde. Scripts fournis :
+
+- `infra/backup/pg_backup.sh` : `pg_dump` (format custom, schéma `public`, sans propriétaire ni droits), chiffré **AES-256** par `gpg` avec `BACKUP_PASSPHRASE` (≥ 20 caractères), empreinte dans `SHA256SUMS`.
+- `infra/backup/pg_restore.sh` : vérification d'empreinte, **refus si la base cible contient déjà des tables**, déchiffrement, `pg_restore`, affichage de la version Alembic. Restaurer toujours dans une base neuve, vérifier, puis basculer.
+- `.github/workflows/db-backup.yml` : export quotidien à 02:30 (Abidjan), conservé 30 jours en artefact. À activer en ajoutant les secrets du dépôt `SUPABASE_DB_URL` (URI session pooler) et `BACKUP_PASSPHRASE`.
+
+Essai local réalisé (PostgreSQL 18.6) : export chiffré → restauration dans une base neuve → lignes identiques table par table, empreinte de l'historique des événements identique, RLS conservée ; seconde restauration refusée (base non vide) ; mauvais mot de passe refusé.
+
+## 5. Mise à jour Android
+
+Installer avec `adb install -r` et la même identité de signature ; numéros de version croissants. Les migrations SQLite sont additives et testées depuis les schémas figés `drift_schemas/schema_v*.sql`. **Ne jamais lancer `flutter test integration_test` sur le terminal de production** : l'outil désinstalle l'application en fin de test (incident du 6/10/2026).
+
+La clé debug permet uniquement les essais. La clé de production devra être générée et stockée hors dépôt, avec sauvegarde chiffrée et procédure d'accès (lot livraison).
+
+## 6. Mise à jour du serveur et retour arrière
+
+Toutes les migrations Alembic sont additives ; tout `downgrade` destructif est bloqué. Avant une mise à jour serveur : sauvegarde validée (§4), déploiement du serveur **avant** le terminal (sinon les nouveaux types d'opération sont refusés puis renvoyés plus tard), vérification `/health/ready` et liste OpenAPI. Retour arrière = restauration de la sauvegarde dans une base neuve, jamais par suppression de colonnes. Aucune migration sur une production existante sans autorisation explicite.

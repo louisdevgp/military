@@ -3,7 +3,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:path_provider/path_provider.dart';
+
 import 'application/pos_controller.dart';
+import 'backup/backup_platform.dart';
+import 'backup/backup_service.dart';
 import 'application/session_controller.dart';
 import 'data/database.dart';
 import 'data/pos_repository.dart';
@@ -33,10 +37,31 @@ Future<void> main() async {
     );
     return;
   }
+  // A verified, staged restore replaces the database before it is opened.
+  BackupManifest? restored;
+  try {
+    restored = await BackupService.applyPendingRestore(
+      docsDir: await getApplicationDocumentsDirectory(),
+      dbFileName: 'mono_recette_v1.sqlite',
+    );
+  } catch (_) {
+    restored = null; // the staged files stay for a later attempt
+  }
   final db = PosDatabase();
   final repo = PosRepository(db);
   try {
     await repo.initialize();
+    if (restored != null) {
+      final check = await db.customSelect('PRAGMA integrity_check').getSingle();
+      if (check.data.values.single != 'ok') {
+        throw StateError('restored database failed integrity check');
+      }
+      await BackupService(
+        repo,
+        const AndroidBackupPlatform(),
+        workDir: await getTemporaryDirectory(),
+      ).markReconcileRequired();
+    }
     final printer = await _detectPrinter();
     runApp(
       ProviderScope(

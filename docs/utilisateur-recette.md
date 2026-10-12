@@ -38,6 +38,12 @@ Administrateur : toucher l'article dans le catalogue, puis **Modifier le prix**.
 
 Administrateur : toucher l'article, puis **Modifier les photos**. Ajouter jusqu'à 3 photos, retirer une photo (corbeille) ou toucher une photo pour la mettre en couverture, puis **Enregistrer**. Les photos ne sont pas imprimées sur le ticket.
 
+## Sauvegarde et restauration
+
+- **Administration → Sauvegarde** : saisir deux fois un mot de passe de sauvegarde (10 caractères minimum), puis **Créer et enregistrer la sauvegarde** et choisir où enregistrer le fichier `.monobak` (Drive, clé USB…). Noter le mot de passe à part : sans lui, la sauvegarde est illisible. Conseil : une sauvegarde chaque soir après la clôture.
+- **Restaurer…** (même écran, ou écran d'activation d'un terminal neuf) : saisir le mot de passe, choisir le fichier. L'application vérifie la sauvegarde, garde une copie de l'état actuel, redémarre, puis **bloque les ventes** jusqu'à la réconciliation.
+- **Administration → Synchronisation → Réconcilier maintenant** : récupère auprès du serveur les opérations faites après la sauvegarde. Ensuite, redonner un code PIN aux comptes indiqués (créés après la sauvegarde).
+
 ## Ticket et boutique
 
 Menu **Administration** → **Ticket et boutique** : nom de la boutique, contacts, pied de ticket et logo (logo d'origine, **Choisir une image** depuis le téléphone, ou **Sans logo**). L'aperçu montre le ticket avant d'enregistrer. Après enregistrement, imprimer un **Ticket test** pour vérifier le papier. Les tickets déjà imprimés ne changent pas ; un duplicata est toujours imprimé avec les coordonnées et le logo à jour (choix de la boutique).

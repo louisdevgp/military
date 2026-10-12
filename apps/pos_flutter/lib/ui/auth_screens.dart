@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/session_controller.dart';
 import '../domain/models.dart';
+import 'backup_screen.dart';
 import 'mono_theme.dart';
 
 class _Brand extends StatelessWidget {
@@ -114,6 +115,13 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                         .setup(_name.text, _pin.text, _confirm.text),
               child: Text(session.busy ? 'Activation…' : 'Activer le terminal'),
             ),
+            const SizedBox(height: 32),
+            const Text(
+              'Terminal de remplacement ? Restaurez plutôt la dernière sauvegarde : '
+              'comptes, articles, stock et ventes seront récupérés.',
+              style: TextStyle(fontSize: 12, color: MonoColors.muted),
+            ),
+            const RestoreBackupForm(),
           ],
         ),
       ),

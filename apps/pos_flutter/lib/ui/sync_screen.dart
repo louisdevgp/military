@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/pos_controller.dart';
 import '../domain/models.dart';
+import 'backup_screen.dart';
 import 'mono_theme.dart';
 
 /// Administrator: server settings (kept in the Android Keystore), automatic
@@ -38,6 +39,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         children: [
+          const ReconcileCard(),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),

@@ -171,6 +171,15 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Serveur Render redéployé (liste OpenAPI : `/api/private/reports/summary` et les 14 types d'événements), puis APK 0.11.0+17 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.11.0-debug.apk`, SHA-256 `52A816BDA2FEA0CBEA0A18C343E37A4B5F0A2CB39DDAD18E92569BB7A94873A7`.
 - Limites : dépenses et clôtures réservées à l'administrateur ; caisse attendue calculée sur le terminal (le serveur vérifie la cohérence, pas les montants) ; enregistrement CSV non encore essayé sur l'appareil.
 
+## Incrément 0.12.0+18 — sauvegarde, restauration et réconciliation (lot 5)
+
+- Sauvegarde du terminal : `VACUUM INTO` + photos + logo, manifeste et empreintes SHA-256, archive chiffrée AES-256-GCM (PBKDF2 210 000 itérations, `BackupBridge.kt`), enregistrée via le sélecteur Android. Restauration (administrateur, ou écran d'activation d'un terminal neuf) : déchiffrement, contrôles de format, de version et d'empreintes, copie de sécurité préalable, remplacement au redémarrage avant ouverture de la base, contrôle d'intégrité, blocage des nouvelles opérations jusqu'à la réconciliation.
+- Réconciliation : points serveur `/api/private/sync/state` et `/api/private/sync/events` ; rejeu local des opérations absentes de la sauvegarde avec leurs effets exacts, conflit d'identifiant → blocage maintenu, compteurs repris après le serveur ; comptes créés après la sauvegarde sans PIN (à redonner).
+- **Scénario de perte testé** (`backup_test.dart`) : terminal A sauvegarde puis continue (compte, ventes, retour, réception, dépense, clôture, synchronisés) ; terminal B neuf restaure, est bloqué, se réconcilie (1 opération confirmée, 7 rejouées, pages de 3), retrouve exactement stock, compteurs, rapport et mouvements de A, puis vend `FACT-2026-00004` sans doublon et synchronise. Refus testés : mauvais mot de passe, version future, base modifiée, vendeur.
+- Base serveur : `infra/backup/pg_backup.sh` / `pg_restore.sh` (gpg AES-256, empreintes, refus si base cible non vide) et tâche GitHub quotidienne (`db-backup.yml`, secrets à ajouter). **Aller-retour local réussi** sur PostgreSQL 18.6 (lignes, empreinte des événements, RLS identiques ; seconde restauration et mauvais mot de passe refusés) après correction de deux défauts du script trouvés par l'essai (format d'empreinte Windows, schéma `public`).
+- Flutter : analyse sans anomalie, **59 tests réussis**. API : **28 réussis sur PostgreSQL 18.6**, 27 + 1 ignoré sur SQLite.
+- Non encore vérifié sur l'appareil : chiffrement natif, enregistrement et ouverture du fichier `.monobak`, redémarrage après restauration. Tâche GitHub non exécutée (secrets absents).
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

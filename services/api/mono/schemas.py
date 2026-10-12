@@ -145,6 +145,26 @@ class CashClosed(StrictModel):
     comment: Annotated[str, Field(max_length=200)]
 
 
+class BackupCreated(StrictModel):
+    """Audit only: the archive never reaches the server."""
+
+    schema_version: Annotated[StrictInt, Field(ge=1, le=1000)]
+
+
+class SyncState(StrictModel):
+    terminal_id: UUID
+    last_sequence: int
+    sale_sequence: int
+
+
+class EventPage(StrictModel):
+    """Envelopes as sent by the terminal, in sequence order, for the
+    reconciliation of a restored terminal."""
+
+    events: list[dict]
+    last_sequence: int
+
+
 class ReportSummary(StrictModel):
     """Figures computed by the server for [start, end), to compare with the
     terminal's report after synchronisation."""
@@ -213,6 +233,7 @@ class Envelope(StrictModel):
         "expense.recorded",
         "expense.cancelled",
         "cash.closed",
+        "backup.created",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

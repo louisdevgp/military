@@ -18,6 +18,14 @@ abstract class SyncTransport {
   /// Called once before a batch; hosted servers may need to wake up.
   Future<void> wake() async {}
 
+  /// Server view of this terminal: last_sequence and sale_sequence.
+  Future<Map<String, dynamic>> state() =>
+      throw UnsupportedError('Réconciliation non disponible.');
+
+  /// Envelopes received by the server after [after], in sequence order.
+  Future<Map<String, dynamic>> events(int after) =>
+      throw UnsupportedError('Réconciliation non disponible.');
+
   void close() {}
 }
 
@@ -64,6 +72,27 @@ class HttpSyncTransport extends SyncTransport {
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
+
+  Future<Map<String, dynamic>> _get(
+    String path, [
+    Map<String, String>? query,
+  ]) async {
+    final response = await client
+        .get(
+          baseUrl.resolve(path).replace(queryParameters: query),
+          headers: {'Authorization': 'Bearer $accessToken'},
+        )
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) throw SyncFailure(_failureCode(response));
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  @override
+  Future<Map<String, dynamic>> state() => _get('/api/private/sync/state');
+
+  @override
+  Future<Map<String, dynamic>> events(int after) =>
+      _get('/api/private/sync/events', {'after': '$after', 'limit': '100'});
 
   /// HTTP status plus the server's technical code (e.g. HTTP_409:
   /// SALE_NUMBER_MISMATCH). Only upper-case codes are kept: never a body
