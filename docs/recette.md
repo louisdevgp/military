@@ -178,6 +178,7 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - **Scénario de perte testé** (`backup_test.dart`) : terminal A sauvegarde puis continue (compte, ventes, retour, réception, dépense, clôture, synchronisés) ; terminal B neuf restaure, est bloqué, se réconcilie (1 opération confirmée, 7 rejouées, pages de 3), retrouve exactement stock, compteurs, rapport et mouvements de A, puis vend `FACT-2026-00004` sans doublon et synchronise. Refus testés : mauvais mot de passe, version future, base modifiée, vendeur.
 - Base serveur : `infra/backup/pg_backup.sh` / `pg_restore.sh` (gpg AES-256, empreintes, refus si base cible non vide) et tâche GitHub quotidienne (`db-backup.yml`, secrets à ajouter). **Aller-retour local réussi** sur PostgreSQL 18.6 (lignes, empreinte des événements, RLS identiques ; seconde restauration et mauvais mot de passe refusés) après correction de deux défauts du script trouvés par l'essai (format d'empreinte Windows, schéma `public`).
 - Flutter : analyse sans anomalie, **59 tests réussis**. API : **28 réussis sur PostgreSQL 18.6**, 27 + 1 ignoré sur SQLite.
+- Artefact `livrables/mono-recette-0.12.0-debug.apk`, SHA-256 `E16F052D9728904F625666905E1DF7BBB3A9E179BE9EA98D29749E7B67F1D254`.
 - Non encore vérifié sur l'appareil : chiffrement natif, enregistrement et ouverture du fichier `.monobak`, redémarrage après restauration. Tâche GitHub non exécutée (secrets absents).
 
 ## Limites matérielles et fonctionnelles
