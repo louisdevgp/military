@@ -12,7 +12,7 @@ Aucun secret n'est dans le dépôt : le mot de passe de la base se saisit dans R
 
 ## 1. Base Supabase
 
-1. Créer un projet : région **Central EU (Frankfurt)**, mot de passe de base fort (gestionnaire de mots de passe, jamais dans le dépôt ni dans une conversation).
+1. Créer un projet : région **Central EU (Frankfurt)**, mot de passe de base long **en lettres et chiffres uniquement** (≥ 24 caractères, gestionnaire de mots de passe ; jamais dans le dépôt ni dans une conversation). Les caractères `@ # / :` cassent l'adresse s'ils ne sont pas encodés et une adresse mal découpée peut faire apparaître une partie du mot de passe dans les journaux du pilote (constaté le 12/10/2026 : mot de passe réinitialisé). L'API refuse désormais une adresse mal formée sans l'afficher.
 2. Bouton **Connect** → onglet **Session pooler** (compatible IPv4, nécessaire depuis Render). Copier l'URI.
 3. Remplacer `[YOUR-PASSWORD]` par le mot de passe et ajouter `?sslmode=require` à la fin :
    `postgresql://postgres.<ref>:<MOT_DE_PASSE>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require`
