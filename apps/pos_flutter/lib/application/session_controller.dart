@@ -28,11 +28,15 @@ class SessionState {
     this.actor,
     this.busy = false,
     this.error,
+    this.recoveryCode,
   });
   final bool loading, activated, busy;
   final List<LocalUser> users;
   final Actor? actor;
   final String? error;
+
+  /// Recovery code to show once, then forget.
+  final String? recoveryCode;
 
   SessionState copy({
     bool? loading,
@@ -41,6 +45,7 @@ class SessionState {
     Actor? Function()? actor,
     bool? busy,
     String? error,
+    String? Function()? recoveryCode,
   }) => SessionState(
     loading: loading ?? this.loading,
     activated: activated ?? this.activated,
@@ -48,6 +53,7 @@ class SessionState {
     actor: actor == null ? this.actor : actor(),
     busy: busy ?? this.busy,
     error: error,
+    recoveryCode: recoveryCode == null ? this.recoveryCode : recoveryCode(),
   );
 }
 
@@ -82,10 +88,12 @@ class SessionController extends Notifier<SessionState> {
   Future<bool> setup(String name, String pin, String confirmation) =>
       _guard(() async {
         final actor = await _users.createFirstAdmin(name, pin, confirmation);
+        final code = await _users.createRecoveryCode(actor);
         state = state.copy(
           activated: true,
           users: await _users.users(),
           actor: () => actor,
+          recoveryCode: () => code,
         );
         touch();
       });
@@ -96,9 +104,43 @@ class SessionController extends Notifier<SessionState> {
     touch();
   });
 
+  /// Forgotten administrator PIN, with the recovery code.
+  Future<bool> recover(
+    String code,
+    String userId,
+    String pin,
+    String confirmation,
+  ) => _guard(() async {
+    final (actor, next) = await _users.recoverAdmin(
+      code,
+      userId,
+      pin,
+      confirmation,
+    );
+    state = state.copy(
+      users: await _users.users(),
+      actor: () => actor,
+      recoveryCode: () => next,
+    );
+    touch();
+  });
+
+  /// New recovery code; the previous one stops working.
+  Future<String?> renewRecoveryCode() async {
+    String? code;
+    final ok = await _guard(() async {
+      code = await _users.createRecoveryCode(_admin);
+    });
+    return ok ? code : null;
+  }
+
+  void recoveryCodeNoted() => state = state.copy(recoveryCode: () => null);
+
+  Future<String?> recoveryCreatedAt() => _users.recoveryCreatedAt();
+
   void lock() {
     _idle?.cancel();
-    state = state.copy(actor: () => null);
+    state = state.copy(actor: () => null, recoveryCode: () => null);
     unawaited(refreshUsers());
   }
 

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../auth/pin.dart';
+import '../auth/recovery.dart';
 import '../domain/models.dart';
 import 'database.dart';
 import 'pos_repository.dart';
@@ -209,6 +210,128 @@ class UserRepository {
           : 'Code PIN incorrect. Accès bloqué ${lockDuration(failures).inMinutes} min.',
     );
   }
+
+  /// When the current recovery code was created, null if there is none.
+  Future<String?> recoveryCreatedAt() => _setting(recoveryCreatedKey);
+
+  /// Replaces the administrator recovery code; the returned code is shown
+  /// once and never stored in clear.
+  Future<String> createRecoveryCode(Actor admin) async {
+    admin.requireAdmin();
+    final code = generateRecoveryCode();
+    final hash = await hasher.create(normalizeRecoveryCode(code));
+    await db.transaction(() async {
+      await _requireActiveAdmin(admin);
+      await _storeRecovery(admin, hash);
+    });
+    return code;
+  }
+
+  /// Forgotten administrator PIN: the recovery code sets a new PIN for an
+  /// active administrator, then is replaced by a new code (single use).
+  Future<(Actor, String)> recoverAdmin(
+    String code,
+    String userId,
+    String pin,
+    String confirmation,
+  ) async {
+    final clean = normalizeRecoveryCode(code);
+    validatePin(pin, confirmation);
+    final now = _now();
+    final locked = await _setting(recoveryLockedKey);
+    if (locked != null && DateTime.parse(locked).isAfter(now)) {
+      final minutes =
+          DateTime.parse(locked).difference(now).inSeconds ~/ 60 + 1;
+      throw BusinessException('Trop d’essais. Réessayez dans $minutes min.');
+    }
+    final stored = await _setting(recoveryHashKey);
+    if (stored == null) {
+      throw const BusinessException(
+        'Aucun code de secours sur ce terminal. Restaurez une sauvegarde '
+        'dont vous connaissez un code PIN administrateur.',
+      );
+    }
+    final user = await _get(userId);
+    if (!user.active || user.role != Role.admin.name) {
+      throw const BusinessException('Choisissez un administrateur actif.');
+    }
+    final parts = stored.split(':');
+    final ok = await hasher.verify(
+      clean,
+      PinHash(parts[2], parts[1], int.parse(parts[0])),
+    );
+    if (!ok) {
+      final failures =
+          int.parse(await _setting(recoveryFailuresKey) ?? '0') + 1;
+      final lock = lockDuration(failures);
+      await db.transaction(() async {
+        await _putSetting(recoveryFailuresKey, '$failures');
+        if (lock != Duration.zero) {
+          await _putSetting(recoveryLockedKey, now.add(lock).toIso8601String());
+        }
+      });
+      final left = pinAttemptsBeforeLock - failures;
+      throw BusinessException(
+        left > 0
+            ? 'Code de secours incorrect. $left essai(s) avant blocage temporaire.'
+            : 'Code de secours incorrect. Bloqué ${lock.inMinutes} min.',
+      );
+    }
+    final pinHash = await hasher.create(pin);
+    final next = generateRecoveryCode();
+    final nextHash = await hasher.create(normalizeRecoveryCode(next));
+    final actor = Actor(user.id, user.name, Role.admin);
+    await db.transaction(() async {
+      await (db.update(db.users)..where((u) => u.id.equals(userId))).write(
+        UsersCompanion(
+          pinHash: Value(pinHash.hash),
+          pinSalt: Value(pinHash.salt),
+          pinIterations: Value(pinHash.iterations),
+          failedAttempts: const Value(0),
+          lockedUntil: const Value(null),
+        ),
+      );
+      // Audit only: neither the PIN nor the codes are part of the events.
+      await pos.appendEvent(
+        PosRepository.uuid.v4(),
+        'user.admin_recovered',
+        actor,
+        now.toIso8601String(),
+        {'user_id': userId},
+      );
+      await _storeRecovery(actor, nextHash);
+    });
+    return (actor, next);
+  }
+
+  Future<void> _storeRecovery(Actor admin, PinHash hash) async {
+    final at = _now().toIso8601String();
+    await _putSetting(
+      recoveryHashKey,
+      '${hash.iterations}:${hash.salt}:${hash.hash}',
+    );
+    await _putSetting(recoveryCreatedKey, at);
+    await (db.delete(
+      db.shopSettings,
+    )..where((s) => s.key.isIn([recoveryFailuresKey, recoveryLockedKey]))).go();
+    await pos.appendEvent(
+      PosRepository.uuid.v4(),
+      'security.recovery_code_created',
+      admin,
+      at,
+      {},
+    );
+  }
+
+  Future<String?> _setting(String key) async => (await (db.select(
+    db.shopSettings,
+  )..where((s) => s.key.equals(key))).getSingleOrNull())?.value;
+
+  Future<void> _putSetting(String key, String value) => db
+      .into(db.shopSettings)
+      .insertOnConflictUpdate(
+        ShopSettingsCompanion.insert(key: key, value: value),
+      );
 
   Future<User> _get(String userId) async {
     final row = await (db.select(

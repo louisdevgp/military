@@ -5,6 +5,7 @@ import '../application/session_controller.dart';
 import '../domain/models.dart';
 import 'backup_screen.dart';
 import 'mono_theme.dart';
+import 'recovery_screens.dart';
 
 class _Brand extends StatelessWidget {
   const _Brand(this.subtitle);
@@ -240,6 +241,19 @@ class _LockScreenState extends ConsumerState<LockScreen> {
               const SizedBox(height: 12),
               InlineNotice(session.error!, error: true),
             ],
+            const SizedBox(height: 16),
+            Center(
+              child: TextButton(
+                onPressed: session.busy
+                    ? null
+                    : () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const RecoveryScreen(),
+                        ),
+                      ),
+                child: const Text('PIN administrateur oublié ?'),
+              ),
+            ),
           ],
         ),
       ),
@@ -307,6 +321,7 @@ class UsersScreen extends ConsumerStatefulWidget {
 
 class _UsersScreenState extends ConsumerState<UsersScreen> {
   List<LocalUser> _all = const [];
+  String? _recoveryAt;
 
   @override
   void initState() {
@@ -315,8 +330,50 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   }
 
   Future<void> _reload() async {
-    final all = await ref.read(sessionProvider.notifier).allUsers();
-    if (mounted) setState(() => _all = all);
+    final notifier = ref.read(sessionProvider.notifier);
+    final all = await notifier.allUsers();
+    final recoveryAt = await notifier.recoveryCreatedAt();
+    if (mounted) {
+      setState(() {
+        _all = all;
+        _recoveryAt = recoveryAt;
+      });
+    }
+  }
+
+  Future<void> _renewRecovery() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Nouveau code de secours'),
+        content: Text(
+          _recoveryAt == null
+              ? 'Le code sera affiché une seule fois : préparez de quoi le noter.'
+              : 'L’ancien code ne fonctionnera plus. Le nouveau sera affiché une seule fois.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Créer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final code = await ref.read(sessionProvider.notifier).renewRecoveryCode();
+    if (!mounted) return;
+    if (code == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ref.read(sessionProvider).error ?? '')),
+      );
+      return;
+    }
+    await showRecoveryCode(context, code);
+    await _reload();
   }
 
   Future<void> _form({LocalUser? reset}) async {
@@ -426,6 +483,32 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: [
+          Card(
+            child: ListTile(
+              leading: Icon(
+                _recoveryAt == null ? Icons.warning_amber : Icons.key_outlined,
+                color: _recoveryAt == null ? Colors.red.shade800 : null,
+              ),
+              title: const Text('Code de secours administrateur'),
+              subtitle: Text(
+                _recoveryAt == null
+                    ? 'Aucun code : créez-le pour pouvoir récupérer un PIN oublié.'
+                    : 'Créé le ${abidjanDate(_recoveryAt!)}',
+              ),
+              trailing: TextButton(
+                onPressed: _renewRecovery,
+                child: Text(_recoveryAt == null ? 'Créer' : 'Renouveler'),
+              ),
+            ),
+          ),
+          if (_all.where((u) => u.active && u.role == Role.admin).length < 2)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: InlineNotice(
+                'Un seul administrateur actif : ajoutez-en un second, qui pourra '
+                'réinitialiser votre PIN.',
+              ),
+            ),
           for (final user in _all)
             Card(
               child: ListTile(

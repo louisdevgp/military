@@ -24,6 +24,7 @@ from mono.models import (
 )
 from mono.schemas import (
     Acknowledgement,
+    AdminRecovered,
     BackupCreated,
     CashClosed,
     CatalogCreated,
@@ -34,6 +35,7 @@ from mono.schemas import (
     PaymentCorrected,
     PriceChanged,
     ReceiptSettingsUpdated,
+    RecoveryCodeCreated,
     SaleCompleted,
     SaleReturned,
     StockMoved,
@@ -114,6 +116,13 @@ def apply_event(session: Session, incoming: Envelope) -> Acknowledgement:
             cancel_expense(session, incoming, ExpenseCancelled.model_validate(incoming.payload))
         elif incoming.kind == "cash.closed":
             close_cash(session, incoming, CashClosed.model_validate(incoming.payload))
+        elif incoming.kind == "user.admin_recovered":
+            # Only the recovered administrator can be the author.
+            target = target_user(session, AdminRecovered.model_validate(incoming.payload).user_id)
+            if target.id != actor.id:
+                raise SyncError("RECOVERY_ACTOR_MISMATCH", 403)
+        elif incoming.kind == "security.recovery_code_created":
+            RecoveryCodeCreated.model_validate(incoming.payload)
         elif incoming.kind == "settings.customer_fields_updated":
             CustomerFieldsUpdated.model_validate(incoming.payload)
         elif incoming.kind == "backup.created":

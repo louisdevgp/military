@@ -15,6 +15,7 @@ import 'printing/printer_service.dart';
 import 'sync/secure_store.dart';
 import 'ui/auth_screens.dart';
 import 'ui/pos_screen.dart';
+import 'ui/recovery_screens.dart';
 import 'ui/mono_theme.dart';
 
 Future<void> main() async {
@@ -113,6 +114,9 @@ class MonoApp extends ConsumerWidget {
       }
     });
     final actor = ref.watch(currentActorProvider);
+    final recoveryCode = ref.watch(
+      sessionProvider.select((s) => s.recoveryCode),
+    );
     final session = actor == null ? ref.watch(sessionProvider) : null;
     return Listener(
       // Any touch postpones the inactivity lock.
@@ -123,6 +127,8 @@ class MonoApp extends ConsumerWidget {
         debugShowCheckedModeBanner: false,
         theme: monoTheme(),
         home: switch (session) {
+          // Shown once after activation or a recovery, before any sale.
+          null when recoveryCode != null => RecoveryCodeScreen(recoveryCode),
           null => const PosScreen(),
           SessionState(loading: true) => const BrandSplash(),
           SessionState(activated: false) => const SetupScreen(),

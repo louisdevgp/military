@@ -52,6 +52,8 @@ void main() {
       ),
     );
     await settle();
+    await tester.ensureVisible(find.byTooltip('Actions pour Dosso'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Actions pour Dosso'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Nouveau code PIN'));

@@ -114,6 +114,8 @@ void main() {
       comment: 'Écart TEST',
       openingFloat: 0,
     );
+    final code = await users.createRecoveryCode(actor);
+    await users.recoverAdmin(code, actor.id, '730194', '730194');
     await SettingsRepository(repo).saveCustomerRequired(actor, {'phone'});
     final day = ReportPeriod.day(DateTime.utc(2026, 10, 6));
     final report = await finance.report(day);
@@ -158,7 +160,7 @@ void main() {
         },
       },
     };
-    expect(fixture['events'], hasLength(18));
+    expect(fixture['events'], hasLength(21));
     if (const bool.fromEnvironment('EXPORT_CONTRACT')) {
       final file = File('../../contracts/vertical_v1.json');
       await file.parent.create(recursive: true);

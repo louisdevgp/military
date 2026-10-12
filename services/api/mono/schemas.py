@@ -62,6 +62,16 @@ class UserPinReset(StrictModel):
     user_id: Label
 
 
+class AdminRecovered(StrictModel):
+    """Audit: an administrator set a new PIN with the recovery code."""
+
+    user_id: Label
+
+
+class RecoveryCodeCreated(StrictModel):
+    """Audit only: the recovery code never leaves the terminal."""
+
+
 class PaymentCorrected(StrictModel):
     sale_id: UUID
     sale_number: Annotated[str, Field(min_length=1, max_length=80)]
@@ -248,6 +258,8 @@ class Envelope(StrictModel):
         "cash.closed",
         "backup.created",
         "settings.customer_fields_updated",
+        "user.admin_recovered",
+        "security.recovery_code_created",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

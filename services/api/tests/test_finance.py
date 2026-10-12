@@ -78,3 +78,41 @@ def test_customer_fields_setting_is_admin_only_and_validated(system):
     for bad in ({"required": ["email"]}, {"required": ["name", "name"]}):
         assert client.post(ROUTE, json=envelope(terminal, 1, kind, "admin", bad)).status_code == 422
     assert client.post(ROUTE, json=envelope(terminal, 1, kind, "admin", payload)).status_code == 200
+
+
+def test_admin_recovery_events(system):
+    client, _, terminal, _ = system
+    recovered = {"user_id": "admin"}
+    assert (
+        client.post(
+            ROUTE,
+            json=envelope(terminal, 1, "user.admin_recovered", "seller", {"user_id": "seller"}),
+        ).json()["detail"]
+        == "ADMIN_REQUIRED"
+    )
+    assert (
+        client.post(
+            ROUTE,
+            json=envelope(terminal, 1, "user.admin_recovered", "admin", {"user_id": "seller"}),
+        ).json()["detail"]
+        == "RECOVERY_ACTOR_MISMATCH"
+    )
+    assert (
+        client.post(
+            ROUTE,
+            json=envelope(terminal, 1, "security.recovery_code_created", "admin", {"code": "x"}),
+        ).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            ROUTE, json=envelope(terminal, 1, "user.admin_recovered", "admin", recovered)
+        ).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            ROUTE, json=envelope(terminal, 2, "security.recovery_code_created", "admin", {})
+        ).status_code
+        == 200
+    )

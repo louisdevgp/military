@@ -198,7 +198,10 @@ class Reconciler {
         await (db.update(db.users)
               ..where((u) => u.id.equals(p['user_id'] as String)))
             .write(UsersCompanion(active: Value(p['active'] as bool)));
-      case 'user.pin_reset' || 'backup.created':
+      case 'user.pin_reset' ||
+          'user.admin_recovered' ||
+          'security.recovery_code_created' ||
+          'backup.created':
         break; // audit only
       case 'catalog.created':
         await db
