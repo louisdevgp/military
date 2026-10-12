@@ -67,6 +67,8 @@ class CatalogItem {
     this.photoPaths = const [],
     this.color,
     this.size,
+    this.threshold = 0,
+    this.active = true,
   });
   final String id, productId, category, name, sku, label;
   final int price, stock;
@@ -74,6 +76,36 @@ class CatalogItem {
 
   /// Structured attributes; null for free single variants.
   final String? color, size;
+
+  /// Low-stock alert level (0 = none) and sale status.
+  final int threshold;
+  final bool active;
+  bool get lowStock => threshold > 0 && stock <= threshold;
+}
+
+/// Manual stock operations. Sales and returns have their own flows.
+enum StockKind {
+  reception('Réception', 'RECEPTION'),
+  loss('Perte', 'LOSS'),
+  adjustment('Correction', 'ADJUSTMENT');
+
+  const StockKind(this.label, this.code);
+  final String label, code;
+}
+
+/// One line of a variant's stock history.
+class StockMovementView {
+  const StockMovementView({
+    required this.kind,
+    required this.quantity,
+    required this.reason,
+    required this.actor,
+    required this.occurredAt,
+    this.counted,
+  });
+  final String kind, reason, actor, occurredAt;
+  final int quantity;
+  final int? counted;
 }
 
 /// Size grids given by the customer on 6 October 2026. Other articles keep a

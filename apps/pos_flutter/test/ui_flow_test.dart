@@ -225,4 +225,57 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await db.close();
   });
+
+  testWidgets('stock : réception depuis l’écran Stock', (tester) async {
+    tester.view.physicalSize = const Size(720, 1440);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final db = PosDatabase(NativeDatabase.memory());
+    final repo = PosRepository(db);
+    await repo.initialize();
+    await repo.createItem(
+      actor: testAdmin,
+      category: 'TEST',
+      name: 'Béret',
+      sku: 'BER-58',
+      label: 'Taille 58',
+      price: 5000,
+      stock: 2,
+    );
+    final container = ProviderContainer(
+      overrides: [
+        repositoryProvider.overrideWithValue(repo),
+        currentActorProvider.overrideWithValue(testAdmin),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(container: container, child: const MonoApp()),
+    );
+    Future<void> settle() async {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 100)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await settle();
+    await tester.tap(find.byTooltip('Administration'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Stock'));
+    await settle();
+    expect(find.text('Béret · Taille 58'), findsOneWidget);
+    await tester.tap(find.text('Béret · Taille 58'));
+    await settle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Réception'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Quantité'), '3');
+    await tester.tap(find.text('Enregistrer'));
+    await settle();
+    expect((await repo.catalog()).single.stock, 5);
+    expect(find.text('5'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await db.close();
+  });
 }

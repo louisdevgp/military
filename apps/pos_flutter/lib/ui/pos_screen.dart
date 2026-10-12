@@ -12,6 +12,7 @@ import 'auth_screens.dart';
 import 'payment_screen.dart';
 import 'receipt_preview.dart';
 import 'receipt_settings_screen.dart';
+import 'stock_screen.dart';
 
 class PosScreen extends ConsumerStatefulWidget {
   const PosScreen({super.key});
@@ -118,6 +119,10 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => const UsersScreen()),
                 ),
+                'stock' => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StockScreen()),
+                ),
                 'receipt' => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -132,6 +137,13 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   child: ListTile(
                     leading: Icon(Icons.group_outlined),
                     title: Text('Utilisateurs'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'stock',
+                  child: ListTile(
+                    leading: Icon(Icons.inventory_2_outlined),
+                    title: Text('Stock'),
                   ),
                 ),
                 PopupMenuItem(
@@ -513,10 +525,14 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          stock == 0 ? 'Épuisé' : 'Stock : $stock',
+                          stock == 0
+                              ? 'Épuisé'
+                              : variants.any((v) => v.lowStock)
+                              ? 'Stock faible : $stock'
+                              : 'Stock : $stock',
                           style: TextStyle(
                             fontSize: 10,
-                            color: stock == 0
+                            color: stock == 0 || variants.any((v) => v.lowStock)
                                 ? Colors.red.shade800
                                 : MonoColors.muted,
                           ),
@@ -895,6 +911,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
         },
       ),
     );
+    // Let the dialog finish closing before releasing its fields.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     tendered.dispose();
     reason.dispose();
   }
@@ -1158,6 +1176,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
         ],
       ),
     );
+    // Let the dialog finish closing before releasing its fields.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     for (final c in [...fields.values, all]) {
       c.dispose();
     }

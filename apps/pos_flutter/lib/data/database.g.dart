@@ -618,6 +618,18 @@ class $VariantsTable extends Variants with TableInfo<$VariantsTable, Variant> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _thresholdMeta = const VerificationMeta(
+    'threshold',
+  );
+  @override
+  late final GeneratedColumn<int> threshold = GeneratedColumn<int>(
+    'threshold',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -629,6 +641,7 @@ class $VariantsTable extends Variants with TableInfo<$VariantsTable, Variant> {
     active,
     color,
     size,
+    threshold,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -705,6 +718,12 @@ class $VariantsTable extends Variants with TableInfo<$VariantsTable, Variant> {
         size.isAcceptableOrUnknown(data['size']!, _sizeMeta),
       );
     }
+    if (data.containsKey('threshold')) {
+      context.handle(
+        _thresholdMeta,
+        threshold.isAcceptableOrUnknown(data['threshold']!, _thresholdMeta),
+      );
+    }
     return context;
   }
 
@@ -750,6 +769,10 @@ class $VariantsTable extends Variants with TableInfo<$VariantsTable, Variant> {
         DriftSqlType.string,
         data['${effectivePrefix}size'],
       ),
+      threshold: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}threshold'],
+      )!,
     );
   }
 
@@ -769,6 +792,7 @@ class Variant extends DataClass implements Insertable<Variant> {
   final bool active;
   final String? color;
   final String? size;
+  final int threshold;
   const Variant({
     required this.id,
     required this.productId,
@@ -779,6 +803,7 @@ class Variant extends DataClass implements Insertable<Variant> {
     required this.active,
     this.color,
     this.size,
+    required this.threshold,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -796,6 +821,7 @@ class Variant extends DataClass implements Insertable<Variant> {
     if (!nullToAbsent || size != null) {
       map['size'] = Variable<String>(size);
     }
+    map['threshold'] = Variable<int>(threshold);
     return map;
   }
 
@@ -812,6 +838,7 @@ class Variant extends DataClass implements Insertable<Variant> {
           ? const Value.absent()
           : Value(color),
       size: size == null && nullToAbsent ? const Value.absent() : Value(size),
+      threshold: Value(threshold),
     );
   }
 
@@ -830,6 +857,7 @@ class Variant extends DataClass implements Insertable<Variant> {
       active: serializer.fromJson<bool>(json['active']),
       color: serializer.fromJson<String?>(json['color']),
       size: serializer.fromJson<String?>(json['size']),
+      threshold: serializer.fromJson<int>(json['threshold']),
     );
   }
   @override
@@ -845,6 +873,7 @@ class Variant extends DataClass implements Insertable<Variant> {
       'active': serializer.toJson<bool>(active),
       'color': serializer.toJson<String?>(color),
       'size': serializer.toJson<String?>(size),
+      'threshold': serializer.toJson<int>(threshold),
     };
   }
 
@@ -858,6 +887,7 @@ class Variant extends DataClass implements Insertable<Variant> {
     bool? active,
     Value<String?> color = const Value.absent(),
     Value<String?> size = const Value.absent(),
+    int? threshold,
   }) => Variant(
     id: id ?? this.id,
     productId: productId ?? this.productId,
@@ -868,6 +898,7 @@ class Variant extends DataClass implements Insertable<Variant> {
     active: active ?? this.active,
     color: color.present ? color.value : this.color,
     size: size.present ? size.value : this.size,
+    threshold: threshold ?? this.threshold,
   );
   Variant copyWithCompanion(VariantsCompanion data) {
     return Variant(
@@ -880,6 +911,7 @@ class Variant extends DataClass implements Insertable<Variant> {
       active: data.active.present ? data.active.value : this.active,
       color: data.color.present ? data.color.value : this.color,
       size: data.size.present ? data.size.value : this.size,
+      threshold: data.threshold.present ? data.threshold.value : this.threshold,
     );
   }
 
@@ -894,14 +926,25 @@ class Variant extends DataClass implements Insertable<Variant> {
           ..write('stock: $stock, ')
           ..write('active: $active, ')
           ..write('color: $color, ')
-          ..write('size: $size')
+          ..write('size: $size, ')
+          ..write('threshold: $threshold')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, productId, sku, label, price, stock, active, color, size);
+  int get hashCode => Object.hash(
+    id,
+    productId,
+    sku,
+    label,
+    price,
+    stock,
+    active,
+    color,
+    size,
+    threshold,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -914,7 +957,8 @@ class Variant extends DataClass implements Insertable<Variant> {
           other.stock == this.stock &&
           other.active == this.active &&
           other.color == this.color &&
-          other.size == this.size);
+          other.size == this.size &&
+          other.threshold == this.threshold);
 }
 
 class VariantsCompanion extends UpdateCompanion<Variant> {
@@ -927,6 +971,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
   final Value<bool> active;
   final Value<String?> color;
   final Value<String?> size;
+  final Value<int> threshold;
   final Value<int> rowid;
   const VariantsCompanion({
     this.id = const Value.absent(),
@@ -938,6 +983,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
     this.active = const Value.absent(),
     this.color = const Value.absent(),
     this.size = const Value.absent(),
+    this.threshold = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   VariantsCompanion.insert({
@@ -950,6 +996,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
     this.active = const Value.absent(),
     this.color = const Value.absent(),
     this.size = const Value.absent(),
+    this.threshold = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        productId = Value(productId),
@@ -967,6 +1014,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
     Expression<bool>? active,
     Expression<String>? color,
     Expression<String>? size,
+    Expression<int>? threshold,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -979,6 +1027,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
       if (active != null) 'active': active,
       if (color != null) 'color': color,
       if (size != null) 'size': size,
+      if (threshold != null) 'threshold': threshold,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -993,6 +1042,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
     Value<bool>? active,
     Value<String?>? color,
     Value<String?>? size,
+    Value<int>? threshold,
     Value<int>? rowid,
   }) {
     return VariantsCompanion(
@@ -1005,6 +1055,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
       active: active ?? this.active,
       color: color ?? this.color,
       size: size ?? this.size,
+      threshold: threshold ?? this.threshold,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1039,6 +1090,9 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
     if (size.present) {
       map['size'] = Variable<String>(size.value);
     }
+    if (threshold.present) {
+      map['threshold'] = Variable<int>(threshold.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1057,6 +1111,7 @@ class VariantsCompanion extends UpdateCompanion<Variant> {
           ..write('active: $active, ')
           ..write('color: $color, ')
           ..write('size: $size, ')
+          ..write('threshold: $threshold, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1568,6 +1623,17 @@ class $StockMovementsTable extends StockMovements
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _countedMeta = const VerificationMeta(
+    'counted',
+  );
+  @override
+  late final GeneratedColumn<int> counted = GeneratedColumn<int>(
+    'counted',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1578,6 +1644,7 @@ class $StockMovementsTable extends StockMovements
     reason,
     originId,
     occurredAt,
+    counted,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1652,6 +1719,12 @@ class $StockMovementsTable extends StockMovements
     } else if (isInserting) {
       context.missing(_occurredAtMeta);
     }
+    if (data.containsKey('counted')) {
+      context.handle(
+        _countedMeta,
+        counted.isAcceptableOrUnknown(data['counted']!, _countedMeta),
+      );
+    }
     return context;
   }
 
@@ -1693,6 +1766,10 @@ class $StockMovementsTable extends StockMovements
         DriftSqlType.string,
         data['${effectivePrefix}occurred_at'],
       )!,
+      counted: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}counted'],
+      ),
     );
   }
 
@@ -1711,6 +1788,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
   final String reason;
   final String originId;
   final String occurredAt;
+  final int? counted;
   const StockMovement({
     required this.id,
     required this.variantId,
@@ -1720,6 +1798,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     required this.reason,
     required this.originId,
     required this.occurredAt,
+    this.counted,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1732,6 +1811,9 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     map['reason'] = Variable<String>(reason);
     map['origin_id'] = Variable<String>(originId);
     map['occurred_at'] = Variable<String>(occurredAt);
+    if (!nullToAbsent || counted != null) {
+      map['counted'] = Variable<int>(counted);
+    }
     return map;
   }
 
@@ -1745,6 +1827,9 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       reason: Value(reason),
       originId: Value(originId),
       occurredAt: Value(occurredAt),
+      counted: counted == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counted),
     );
   }
 
@@ -1762,6 +1847,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       reason: serializer.fromJson<String>(json['reason']),
       originId: serializer.fromJson<String>(json['originId']),
       occurredAt: serializer.fromJson<String>(json['occurredAt']),
+      counted: serializer.fromJson<int?>(json['counted']),
     );
   }
   @override
@@ -1776,6 +1862,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       'reason': serializer.toJson<String>(reason),
       'originId': serializer.toJson<String>(originId),
       'occurredAt': serializer.toJson<String>(occurredAt),
+      'counted': serializer.toJson<int?>(counted),
     };
   }
 
@@ -1788,6 +1875,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     String? reason,
     String? originId,
     String? occurredAt,
+    Value<int?> counted = const Value.absent(),
   }) => StockMovement(
     id: id ?? this.id,
     variantId: variantId ?? this.variantId,
@@ -1797,6 +1885,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     reason: reason ?? this.reason,
     originId: originId ?? this.originId,
     occurredAt: occurredAt ?? this.occurredAt,
+    counted: counted.present ? counted.value : this.counted,
   );
   StockMovement copyWithCompanion(StockMovementsCompanion data) {
     return StockMovement(
@@ -1810,6 +1899,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
       occurredAt: data.occurredAt.present
           ? data.occurredAt.value
           : this.occurredAt,
+      counted: data.counted.present ? data.counted.value : this.counted,
     );
   }
 
@@ -1823,7 +1913,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           ..write('actorId: $actorId, ')
           ..write('reason: $reason, ')
           ..write('originId: $originId, ')
-          ..write('occurredAt: $occurredAt')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('counted: $counted')
           ..write(')'))
         .toString();
   }
@@ -1838,6 +1929,7 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
     reason,
     originId,
     occurredAt,
+    counted,
   );
   @override
   bool operator ==(Object other) =>
@@ -1850,7 +1942,8 @@ class StockMovement extends DataClass implements Insertable<StockMovement> {
           other.actorId == this.actorId &&
           other.reason == this.reason &&
           other.originId == this.originId &&
-          other.occurredAt == this.occurredAt);
+          other.occurredAt == this.occurredAt &&
+          other.counted == this.counted);
 }
 
 class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
@@ -1862,6 +1955,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
   final Value<String> reason;
   final Value<String> originId;
   final Value<String> occurredAt;
+  final Value<int?> counted;
   final Value<int> rowid;
   const StockMovementsCompanion({
     this.id = const Value.absent(),
@@ -1872,6 +1966,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     this.reason = const Value.absent(),
     this.originId = const Value.absent(),
     this.occurredAt = const Value.absent(),
+    this.counted = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   StockMovementsCompanion.insert({
@@ -1883,6 +1978,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     required String reason,
     required String originId,
     required String occurredAt,
+    this.counted = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        variantId = Value(variantId),
@@ -1901,6 +1997,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Expression<String>? reason,
     Expression<String>? originId,
     Expression<String>? occurredAt,
+    Expression<int>? counted,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1912,6 +2009,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       if (reason != null) 'reason': reason,
       if (originId != null) 'origin_id': originId,
       if (occurredAt != null) 'occurred_at': occurredAt,
+      if (counted != null) 'counted': counted,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1925,6 +2023,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     Value<String>? reason,
     Value<String>? originId,
     Value<String>? occurredAt,
+    Value<int?>? counted,
     Value<int>? rowid,
   }) {
     return StockMovementsCompanion(
@@ -1936,6 +2035,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
       reason: reason ?? this.reason,
       originId: originId ?? this.originId,
       occurredAt: occurredAt ?? this.occurredAt,
+      counted: counted ?? this.counted,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1967,6 +2067,9 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
     if (occurredAt.present) {
       map['occurred_at'] = Variable<String>(occurredAt.value);
     }
+    if (counted.present) {
+      map['counted'] = Variable<int>(counted.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1984,6 +2087,7 @@ class StockMovementsCompanion extends UpdateCompanion<StockMovement> {
           ..write('reason: $reason, ')
           ..write('originId: $originId, ')
           ..write('occurredAt: $occurredAt, ')
+          ..write('counted: $counted, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4980,6 +5084,7 @@ typedef $$VariantsTableCreateCompanionBuilder = VariantsCompanion Function({
   Value<bool> active,
   Value<String?> color,
   Value<String?> size,
+  Value<int> threshold,
   Value<int> rowid,
 });
 typedef $$VariantsTableUpdateCompanionBuilder = VariantsCompanion Function({
@@ -4992,6 +5097,7 @@ typedef $$VariantsTableUpdateCompanionBuilder = VariantsCompanion Function({
   Value<bool> active,
   Value<String?> color,
   Value<String?> size,
+  Value<int> threshold,
   Value<int> rowid,
 });
 
@@ -5081,6 +5187,11 @@ class $$VariantsTableFilterComposer
 
   ColumnFilters<String> get size => $composableBuilder(
     column: $table.size,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get threshold => $composableBuilder(
+    column: $table.threshold,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5182,6 +5293,11 @@ class $$VariantsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get threshold => $composableBuilder(
+    column: $table.threshold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProductsTableOrderingComposer get productId {
     final $$ProductsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5238,6 +5354,9 @@ class $$VariantsTableAnnotationComposer
 
   GeneratedColumn<String> get size =>
       $composableBuilder(column: $table.size, builder: (column) => column);
+
+  GeneratedColumn<int> get threshold =>
+      $composableBuilder(column: $table.threshold, builder: (column) => column);
 
   $$ProductsTableAnnotationComposer get productId {
     final $$ProductsTableAnnotationComposer composer = $composerBuilder(
@@ -5325,6 +5444,7 @@ class $$VariantsTableTableManager
                 Value<bool> active = const Value.absent(),
                 Value<String?> color = const Value.absent(),
                 Value<String?> size = const Value.absent(),
+                Value<int> threshold = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VariantsCompanion(
                 id: id,
@@ -5336,6 +5456,7 @@ class $$VariantsTableTableManager
                 active: active,
                 color: color,
                 size: size,
+                threshold: threshold,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5349,6 +5470,7 @@ class $$VariantsTableTableManager
                 Value<bool> active = const Value.absent(),
                 Value<String?> color = const Value.absent(),
                 Value<String?> size = const Value.absent(),
+                Value<int> threshold = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => VariantsCompanion.insert(
                 id: id,
@@ -5360,6 +5482,7 @@ class $$VariantsTableTableManager
                 active: active,
                 color: color,
                 size: size,
+                threshold: threshold,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -5786,6 +5909,7 @@ typedef $$StockMovementsTableCreateCompanionBuilder =
       required String reason,
       required String originId,
       required String occurredAt,
+      Value<int?> counted,
       Value<int> rowid,
     });
 typedef $$StockMovementsTableUpdateCompanionBuilder =
@@ -5798,6 +5922,7 @@ typedef $$StockMovementsTableUpdateCompanionBuilder =
       Value<String> reason,
       Value<String> originId,
       Value<String> occurredAt,
+      Value<int?> counted,
       Value<int> rowid,
     });
 
@@ -5871,6 +5996,11 @@ class $$StockMovementsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<int> get counted => $composableBuilder(
+    column: $table.counted,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$VariantsTableFilterComposer get variantId {
     final $$VariantsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -5939,6 +6069,11 @@ class $$StockMovementsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get counted => $composableBuilder(
+    column: $table.counted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$VariantsTableOrderingComposer get variantId {
     final $$VariantsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -5994,6 +6129,9 @@ class $$StockMovementsTableAnnotationComposer
     column: $table.occurredAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get counted =>
+      $composableBuilder(column: $table.counted, builder: (column) => column);
 
   $$VariantsTableAnnotationComposer get variantId {
     final $$VariantsTableAnnotationComposer composer = $composerBuilder(
@@ -6057,6 +6195,7 @@ class $$StockMovementsTableTableManager
                 Value<String> reason = const Value.absent(),
                 Value<String> originId = const Value.absent(),
                 Value<String> occurredAt = const Value.absent(),
+                Value<int?> counted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StockMovementsCompanion(
                 id: id,
@@ -6067,6 +6206,7 @@ class $$StockMovementsTableTableManager
                 reason: reason,
                 originId: originId,
                 occurredAt: occurredAt,
+                counted: counted,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6079,6 +6219,7 @@ class $$StockMovementsTableTableManager
                 required String reason,
                 required String originId,
                 required String occurredAt,
+                Value<int?> counted = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StockMovementsCompanion.insert(
                 id: id,
@@ -6089,6 +6230,7 @@ class $$StockMovementsTableTableManager
                 reason: reason,
                 originId: originId,
                 occurredAt: occurredAt,
+                counted: counted,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

@@ -15,3 +15,21 @@ Calendrier indicatif à partir du 6 octobre 2026, jours calendaires. Gel fonctio
 | J13–J14 | Pilote et livraison | APK signé avec clé durable, backend/site compilés, CI, HTTPS, guides, PV de recette et limites explicites. |
 
 Chaque lot : implémenter → exécuter les contrôles → corriger → consigner les preuves. Ne pas multiplier les modules avant validation du parcours et de la synchronisation.
+
+## Suite validée le 12 octobre 2026
+
+État : 0.7.1 (impression H10, profils PIN, couleurs × tailles, corrections de paiement, réglages ticket) ; déploiement de recette Supabase/Render préparé, en attente du dépôt GitHub.
+
+Lots à réaliser, dans cet ordre, chacun validé (analyse, tests, PostgreSQL, APK) avant le suivant :
+
+1. ✅ (0.8.0) Mouvements de stock : réception, perte, correction, inventaire (quantité comptée et écart tracés), seuil de stock faible, désactivation/réactivation, historique par variante.
+2. Retours et annulations : annulation complète, retour partiel cumulé borné, remboursement unique, revendable/endommagé.
+3. Dépenses, rapports (jour, semaine, mois, année, période libre, fuseau Africa/Abidjan), alertes stock, export CSV, clôture de caisse.
+4. Synchronisation automatique et réglages serveur conservés de façon sécurisée.
+5. Sauvegarde et restauration (base et photos), réconciliation des séquences.
+6. Fiches client et champs obligatoires configurables.
+7. Sécurité de production : activation du terminal, jetons courts renouvelés, Keystore, base chiffrée.
+8. Livraison : APK de production signé (clé hors dépôt), CI, tests sur l'appareil avec identifiant d'application distinct, recette matérielle (papier absent, redémarrage, hors ligne, mise à jour).
+9. Site public React/TypeScript/Vite.
+
+Gardé en amélioration, non planifié : lecteur de codes-barres du H10, impression d'étiquettes code-barres.

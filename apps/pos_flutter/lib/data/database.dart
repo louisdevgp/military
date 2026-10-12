@@ -32,6 +32,8 @@ class Variants extends Table {
   // Structured attributes (schema v5); null on older or free variants.
   TextColumn get color => text().nullable()();
   TextColumn get size => text().nullable()();
+  // Low-stock alert level (schema v6); 0 = no alert.
+  IntColumn get threshold => integer().withDefault(const Constant(0))();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -57,6 +59,8 @@ class StockMovements extends Table {
   TextColumn get reason => text()();
   TextColumn get originId => text()();
   TextColumn get occurredAt => text()();
+  // Quantity counted during an inventory (schema v6); null otherwise.
+  IntColumn get counted => integer().nullable()();
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -148,7 +152,7 @@ class PosDatabase extends _$PosDatabase {
     : super(executor ?? driftDatabase(name: 'mono_recette_v1'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   Future<void> _createLocalPhotoTable() => customStatement('''
     CREATE TABLE local_product_photos (
@@ -183,7 +187,7 @@ class PosDatabase extends _$PosDatabase {
       await customStatement('PRAGMA foreign_keys = ON');
     },
     onUpgrade: (m, from, to) async {
-      if (from < 1 || to != 5) {
+      if (from < 1 || to != 6) {
         throw StateError('Migration non prise en charge : $from → $to.');
       }
       // Additive steps only: existing sales, stock and outbox stay untouched.
@@ -197,6 +201,10 @@ class PosDatabase extends _$PosDatabase {
       if (from < 5) {
         await m.addColumn(variants, variants.color);
         await m.addColumn(variants, variants.size);
+      }
+      if (from < 6) {
+        await m.addColumn(variants, variants.threshold);
+        await m.addColumn(stockMovements, stockMovements.counted);
       }
     },
   );

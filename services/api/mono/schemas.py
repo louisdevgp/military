@@ -80,6 +80,22 @@ class ReceiptSettingsUpdated(StrictModel):
     logo: Literal["original", "custom", "none"]
 
 
+class StockMoved(StrictModel):
+    """Manual stock operation; quantity is signed (loss < 0)."""
+
+    variant_id: UUID
+    kind: Literal["RECEPTION", "LOSS", "ADJUSTMENT"]
+    quantity: Annotated[StrictInt, Field(ge=-1_000_000, le=1_000_000)]
+    reason: Annotated[str, Field(min_length=3, max_length=200)]
+    counted: Annotated[StrictInt, Field(ge=0, le=1_000_000)] | None = None
+
+
+class VariantUpdated(StrictModel):
+    variant_id: UUID
+    threshold: Annotated[StrictInt, Field(ge=0, le=1_000_000)] | None = None
+    active: StrictBool | None = None
+
+
 class Customer(StrictModel):
     name: OptionalText = ""
     first_name: OptionalText = ""
@@ -128,6 +144,8 @@ class Envelope(StrictModel):
         "user.updated",
         "user.pin_reset",
         "settings.receipt_updated",
+        "stock.moved",
+        "variant.updated",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

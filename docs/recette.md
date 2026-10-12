@@ -109,6 +109,14 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - APK 0.7.1+11 mis à jour (`adb install -r`, données conservées). Artefact `livrables/mono-recette-0.7.1-debug.apk`, SHA-256 `F53A0B99C92A4F835B9374E2519B2EADEC78B39FC4C13D1EA08132452B4C8C19`.
 - Déploiement Supabase/Render : **non effectué à ce stade** (comptes à créer par l'utilisateur).
 
+## Incrément 0.8.0+12 — mouvements de stock (lot 1)
+
+- Écran **Stock** (Administration, admin seulement) : recherche, filtre stock faible/épuisé, par variante **Réception** (+), **Perte** (−), **Correction** (±) avec motif obligatoire, **seuil d'alerte**, **désactivation/réactivation** (variante retirée de la vente, historique conservé) et **historique** des mouvements (type, quantité, date Abidjan, opérateur, motif). Écran **Inventaire** : quantités comptées, chaque écart crée une correction tracée avec la quantité comptée ; compte identique = aucun mouvement.
+- Stock négatif refusé en SQL dans la transaction (mouvement + événement), refus = rien écrit. Catalogue : badge « Stock faible ».
+- SQLite v6 (seuil, quantité comptée) et Alembic 0005, additifs. Événements `stock.moved` (quantité signée, cohérence du signe et du compte contrôlée par le serveur) et `variant.updated`.
+- Flutter : analyse sans anomalie, **46 tests réussis** (dont parcours écran Stock). Contrat régénéré (12 événements). API : **23 réussis sur PostgreSQL 18.6**, 22 + 1 ignoré sur SQLite ; base de contrôle en `0005 (head)`.
+- APK 0.8.0+12 mis à jour par USB (`adb -s H10P736253F0010 install -r`, données conservées). Artefact `livrables/mono-recette-0.8.0-debug.apk`, SHA-256 `CEDD1780AEA3D121C182C69A918F4D1EDD525B44CBAA53AC664524AEFFCAED6A`. Essai sur l'appareil : à faire par l'utilisateur.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

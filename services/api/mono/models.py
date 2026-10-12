@@ -82,6 +82,7 @@ class Variant(Base):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     color: Mapped[str | None] = mapped_column(String(40))
     size: Mapped[str | None] = mapped_column(String(20))
+    threshold: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
 
 
 class Sale(Base):
@@ -103,6 +104,7 @@ class Movement(Base):
     reason: Mapped[str] = mapped_column(String(200))
     origin_id: Mapped[str] = mapped_column(String(36), index=True)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    counted: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class SaleCorrection(Base):

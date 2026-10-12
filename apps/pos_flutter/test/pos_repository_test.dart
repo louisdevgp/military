@@ -501,4 +501,115 @@ void main() {
       expect(await repo.catalog(), hasLength(6));
     },
   );
+
+  test(
+    'mouvements de stock : réception, perte, correction, inventaire, statut',
+    () async {
+      final id = await item(); // stock 5
+      Future<void> refused(Future<void> Function() call) =>
+          expectLater(call(), throwsA(isA<BusinessException>()));
+      final eventsBefore = (await db.select(db.outboxEntries).get()).length;
+      await refused(
+        () => repo.moveStock(
+          seller,
+          id,
+          kind: StockKind.reception,
+          quantity: 2,
+          reason: 'Livraison',
+        ),
+      );
+      await refused(
+        () => repo.moveStock(
+          admin,
+          id,
+          kind: StockKind.loss,
+          quantity: 2,
+          reason: '',
+        ),
+      );
+      await refused(
+        () => repo.moveStock(
+          admin,
+          id,
+          kind: StockKind.loss,
+          quantity: -2,
+          reason: 'Vol',
+        ),
+      );
+      // Negative stock refused: nothing written.
+      await refused(
+        () => repo.moveStock(
+          admin,
+          id,
+          kind: StockKind.loss,
+          quantity: 6,
+          reason: 'Casse',
+        ),
+      );
+      expect((await db.select(db.outboxEntries).get()).length, eventsBefore);
+      await repo.moveStock(
+        admin,
+        id,
+        kind: StockKind.reception,
+        quantity: 4,
+        reason: 'Livraison',
+      ); // 9
+      await repo.moveStock(
+        admin,
+        id,
+        kind: StockKind.loss,
+        quantity: 2,
+        reason: 'Casse',
+      ); // 7
+      await repo.moveStock(
+        admin,
+        id,
+        kind: StockKind.adjustment,
+        quantity: -1,
+        reason: 'Erreur',
+      ); // 6
+      expect((await repo.catalog()).single.stock, 6);
+      // Inventory: counted 4 → correction −2 with the count; same count → nothing.
+      expect(await repo.countInventory(admin, {id: 4}), 1);
+      expect(await repo.countInventory(admin, {id: 4}), 0);
+      await refused(() => repo.countInventory(admin, {id: -1}));
+      expect((await repo.catalog()).single.stock, 4);
+      final history = await repo.movements(id);
+      expect(history.map((m) => (m.kind, m.quantity)).toList(), [
+        ('ADJUSTMENT', -2),
+        ('ADJUSTMENT', -1),
+        ('LOSS', -2),
+        ('RECEPTION', 4),
+        ('INITIAL', 5),
+      ]);
+      expect(history.first.counted, 4);
+      expect(history.first.reason, 'Inventaire');
+      final events = [
+        for (final e in await db.select(db.outboxEntries).get())
+          jsonDecode(e.envelope) as Map,
+      ];
+      final moved = events.where((e) => e['kind'] == 'stock.moved').toList();
+      expect(moved, hasLength(4));
+      expect(moved.last['payload'], {
+        'variant_id': id,
+        'kind': 'ADJUSTMENT',
+        'quantity': -2,
+        'reason': 'Inventaire',
+        'counted': 4,
+      });
+      // Threshold and deactivation.
+      await repo.updateVariant(admin, id, threshold: 4);
+      expect((await repo.catalog()).single.lowStock, isTrue);
+      await refused(() => repo.updateVariant(seller, id, active: false));
+      await repo.updateVariant(admin, id, active: false);
+      expect(await repo.catalog(), isEmpty);
+      final all = await repo.inventory();
+      expect((all.single.active, all.single.threshold), (false, 4));
+      await refused(
+        () => repo.checkout(seller, request(id, quantity: 1, tendered: 20000)),
+      );
+      await repo.updateVariant(admin, id, active: true);
+      expect(await repo.catalog(), hasLength(1));
+    },
+  );
 }

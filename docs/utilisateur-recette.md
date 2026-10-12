@@ -14,6 +14,12 @@ L’écran affiche en permanence « Recette · <utilisateur> · <imprimante> ».
 - Les boutons **Montant exact** et billets ronds évitent la saisie. Si la monnaie à rendre atteint le total ou 50 000 FCFA, l’application demande de vérifier la somme avant de valider.
 - Après la vente, seul un administrateur peut **corriger le paiement** depuis l’historique (icône crayon) : mode de paiement ou somme réellement remise, avec un motif obligatoire. La vente d’origine reste dans l’historique ; le duplicata affiche le paiement corrigé et la mention « Paiement corrigé le … ». Le total et les articles ne se corrigent pas ainsi : une annulation ou un retour sera une opération distincte.
 
+## Stock
+
+Administrateur : **Administration → Stock**. Toucher une variante pour enregistrer une **Réception** (marchandise reçue), une **Perte** (casse, vol) ou une **Correction** (+ ou −), toujours avec un motif ; régler le **seuil d'alerte** (badge « Stock faible » au catalogue) ; **Désactiver** une variante qui ne se vend plus (elle disparaît de la caisse, son historique reste) ; consulter l'**historique**. Le stock ne peut jamais devenir négatif.
+
+**Inventaire** (bouton en haut de l'écran Stock) : saisir la quantité réellement comptée pour chaque variante vérifiée (laisser vide si non comptée) ; chaque écart est enregistré comme correction avec la quantité comptée.
+
 ## Modifier un prix
 
 Administrateur : toucher l'article dans le catalogue, puis **Modifier le prix**. Saisir le nouveau prix de chaque taille, ou utiliser **Même prix pour toutes** puis **Appliquer**. Le prix vaut pour les prochaines ventes ; les ventes déjà faites et leurs duplicatas gardent leur prix.

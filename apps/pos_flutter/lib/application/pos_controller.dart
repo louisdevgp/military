@@ -347,6 +347,98 @@ class PosController extends Notifier<PosState> {
     }
   }
 
+  /// Reception, loss or correction typed by the administrator.
+  Future<bool> moveStock(
+    String variantId,
+    StockKind kind,
+    String quantity,
+    String reason,
+  ) => _run(() async {
+    final qty = int.tryParse(quantity.trim());
+    if (qty == null) {
+      throw const BusinessException('Saisissez une quantité entière.');
+    }
+    await repo.moveStock(
+      actor,
+      variantId,
+      kind: kind,
+      quantity: qty,
+      reason: reason,
+    );
+    return '${kind.label} enregistrée.';
+  });
+
+  /// Inventory counts keyed by variant id; empty fields are not counted.
+  Future<bool> countInventory(Map<String, String> counts, String reason) =>
+      _run(() async {
+        final counted = <String, int>{};
+        for (final e in counts.entries) {
+          final text = e.value.trim();
+          if (text.isEmpty) continue;
+          counted[e.key] =
+              int.tryParse(text) ??
+              (throw const BusinessException('Quantité comptée invalide.'));
+        }
+        final changed = await repo.countInventory(
+          actor,
+          counted,
+          reason: reason,
+        );
+        return changed == 0
+            ? 'Inventaire conforme : aucun écart.'
+            : 'Inventaire enregistré : $changed écart(s) corrigé(s).';
+      });
+
+  Future<bool> updateVariant(
+    String variantId, {
+    String? threshold,
+    bool? active,
+  }) => _run(() async {
+    int? level;
+    if (threshold != null) {
+      level =
+          int.tryParse(threshold.trim()) ??
+          (throw const BusinessException('Seuil invalide.'));
+    }
+    await repo.updateVariant(
+      actor,
+      variantId,
+      threshold: level,
+      active: active,
+    );
+    return active == null
+        ? 'Seuil enregistré.'
+        : active
+        ? 'Variante réactivée.'
+        : 'Variante désactivée : elle n’est plus proposée à la vente.';
+  });
+
+  /// Runs an administrator operation, then refreshes the screens.
+  Future<bool> _run(Future<String> Function() operation) async {
+    if (state.busy) return false;
+    state = state.copy(busy: true);
+    String message;
+    try {
+      message = await operation();
+    } on BusinessException catch (e) {
+      state = state.copy(busy: false, message: e.message);
+      return false;
+    } catch (_) {
+      state = state.copy(
+        busy: false,
+        message: 'Opération non confirmée. Réessayez.',
+      );
+      return false;
+    }
+    try {
+      await refresh();
+    } catch (_) {
+      message = '$message Actualisation impossible.';
+    }
+    state = state.copy(busy: false, message: message);
+    return true;
+  }
+
   /// Saves an article's photos; removed images are deleted after commit.
   Future<bool> updatePhotos(String productId, List<String> paths) async {
     if (state.busy) return false;

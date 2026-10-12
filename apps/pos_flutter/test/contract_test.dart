@@ -68,6 +68,15 @@ void main() {
       ),
     );
     await repo.changePrice(actor, id, 14000);
+    await repo.moveStock(
+      actor,
+      id,
+      kind: StockKind.reception,
+      quantity: 2,
+      reason: 'Réception TEST',
+    );
+    await repo.countInventory(actor, {id: 4});
+    await repo.updateVariant(actor, id, threshold: 2);
     await SettingsRepository(repo).saveReceiptSettings(
       actor,
       const ReceiptSettings(contacts: '0700000000', logo: LogoChoice.none),
@@ -84,7 +93,7 @@ void main() {
       'terminal_id': (await repo.terminal()).terminalId,
       'events': events.map((e) => jsonDecode(e.envelope)).toList(),
       'expected': {
-        'stock': 3,
+        'stock': 4,
         'total': 25000,
         'current_price': 14000,
         'sale_count': 1,
@@ -93,7 +102,7 @@ void main() {
         'variants': 3,
       },
     };
-    expect(fixture['events'], hasLength(9));
+    expect(fixture['events'], hasLength(12));
     if (const bool.fromEnvironment('EXPORT_CONTRACT')) {
       final file = File('../../contracts/vertical_v1.json');
       await file.parent.create(recursive: true);

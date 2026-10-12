@@ -26,9 +26,11 @@ from mono.schemas import (
     PriceChanged,
     ReceiptSettingsUpdated,
     SaleCompleted,
+    StockMoved,
     UserCreated,
     UserPinReset,
     UserUpdated,
+    VariantUpdated,
 )
 
 
@@ -94,6 +96,10 @@ def apply_event(session: Session, incoming: Envelope) -> Acknowledgement:
             target_user(session, payload.user_id).active = payload.active
         elif incoming.kind == "user.pin_reset":
             target_user(session, UserPinReset.model_validate(incoming.payload).user_id)
+        elif incoming.kind == "stock.moved":
+            move_stock(session, incoming, StockMoved.model_validate(incoming.payload))
+        elif incoming.kind == "variant.updated":
+            update_variant(session, VariantUpdated.model_validate(incoming.payload))
         else:
             # Recorded in the event log only; no server projection yet.
             ReceiptSettingsUpdated.model_validate(incoming.payload)
@@ -147,6 +153,53 @@ def target_user(session: Session, user_id: str) -> Actor:
     if user is None:
         raise SyncError("USER_MISSING")
     return user
+
+
+def move_stock(session: Session, event: Envelope, data: StockMoved) -> None:
+    sign_ok = {
+        "RECEPTION": data.quantity > 0,
+        "LOSS": data.quantity < 0,
+        "ADJUSTMENT": data.quantity != 0,
+    }[data.kind]
+    if not sign_ok:
+        raise SyncError("QUANTITY_SIGN_MISMATCH")
+    variant = session.get(Variant, str(data.variant_id))
+    if variant is None:
+        raise SyncError("VARIANT_MISSING")
+    if data.counted is not None and data.counted != variant.stock + data.quantity:
+        raise SyncError("COUNT_MISMATCH")
+    result = session.execute(
+        update(Variant)
+        .where(Variant.id == variant.id, Variant.stock + data.quantity >= 0)
+        .values(stock=Variant.stock + data.quantity)
+    )
+    if result.rowcount != 1:
+        raise SyncError("INSUFFICIENT_STOCK")
+    session.add(
+        Movement(
+            id=str(event.id),
+            variant_id=variant.id,
+            kind=data.kind,
+            quantity=data.quantity,
+            actor_id=event.actor_id,
+            reason=data.reason,
+            origin_id=str(event.id),
+            occurred_at=event.occurred_at.astimezone(UTC),
+            counted=data.counted,
+        )
+    )
+
+
+def update_variant(session: Session, data: VariantUpdated) -> None:
+    if data.threshold is None and data.active is None:
+        raise SyncError("EMPTY_UPDATE", 422)
+    variant = session.get(Variant, str(data.variant_id))
+    if variant is None:
+        raise SyncError("VARIANT_MISSING")
+    if data.threshold is not None:
+        variant.threshold = data.threshold
+    if data.active is not None:
+        variant.active = data.active
 
 
 def correct_payment(session: Session, event: Envelope, data: PaymentCorrected) -> None:

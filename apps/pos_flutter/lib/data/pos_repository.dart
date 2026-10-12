@@ -29,7 +29,13 @@ class PosRepository {
 
   Future<TerminalState> terminal() => db.select(db.terminalStates).getSingle();
 
-  Future<List<CatalogItem>> catalog() async {
+  /// Sellable variants only.
+  Future<List<CatalogItem>> catalog() => _items(activeOnly: true);
+
+  /// Every variant, including deactivated ones, for stock management.
+  Future<List<CatalogItem>> inventory() => _items(activeOnly: false);
+
+  Future<List<CatalogItem>> _items({required bool activeOnly}) async {
     final photos = <String, List<String>>{};
     for (final row
         in await db
@@ -47,7 +53,8 @@ class PosRepository {
         db.categories,
         db.categories.id.equalsExp(db.products.categoryId),
       ),
-    ])..where(db.variants.active.equals(true));
+    ]);
+    if (activeOnly) query.where(db.variants.active.equals(true));
     final rows = await query.get();
     return rows.map((row) {
       final v = row.readTable(db.variants);
@@ -63,8 +70,191 @@ class PosRepository {
         photoPaths: List.unmodifiable(photos[v.productId] ?? const <String>[]),
         color: v.color,
         size: v.size,
+        threshold: v.threshold,
+        active: v.active,
       );
     }).toList()..sort((a, b) => a.name.compareTo(b.name));
+  }
+
+  static String _motive(String reason) {
+    final motive = reason.trim();
+    if (motive.length < 3 || motive.length > 200) {
+      throw const BusinessException('Indiquez un motif de 3 à 200 caractères.');
+    }
+    return motive;
+  }
+
+  /// Reception (+), loss (−) or signed correction, administrator only.
+  /// Negative stock is refused in SQL, inside the same transaction as the
+  /// movement and its outbox event.
+  Future<void> moveStock(
+    Actor actor,
+    String variantId, {
+    required StockKind kind,
+    required int quantity,
+    required String reason,
+  }) async {
+    actor.requireAdmin();
+    final motive = _motive(reason);
+    if (quantity == 0 || quantity.abs() > maxQuantity) {
+      throw const BusinessException('Quantité invalide.');
+    }
+    if (kind != StockKind.adjustment && quantity < 0) {
+      throw const BusinessException('Saisissez une quantité positive.');
+    }
+    final delta = kind == StockKind.loss ? -quantity : quantity;
+    await db.transaction(
+      () => _applyMovement(actor, variantId, kind, delta, motive),
+    );
+  }
+
+  /// Inventory: counted quantities replace the stock through ADJUSTMENT
+  /// movements recording the count and the difference. Unchanged counts
+  /// create nothing. Returns the number of corrected variants.
+  Future<int> countInventory(
+    Actor actor,
+    Map<String, int> counted, {
+    String reason = 'Inventaire',
+  }) async {
+    actor.requireAdmin();
+    final motive = _motive(reason);
+    if (counted.isEmpty || counted.length > 500) {
+      throw const BusinessException('Aucune quantité comptée.');
+    }
+    if (counted.values.any((q) => q < 0 || q > maxQuantity)) {
+      throw const BusinessException('Quantité comptée invalide.');
+    }
+    return db.transaction(() async {
+      var changed = 0;
+      for (final entry in counted.entries) {
+        final variant = await _variant(entry.key);
+        final delta = entry.value - variant.stock;
+        if (delta == 0) continue;
+        await _applyMovement(
+          actor,
+          entry.key,
+          StockKind.adjustment,
+          delta,
+          motive,
+          counted: entry.value,
+        );
+        changed++;
+      }
+      return changed;
+    });
+  }
+
+  Future<Variant> _variant(String id) async =>
+      await (db.select(
+        db.variants,
+      )..where((v) => v.id.equals(id))).getSingleOrNull() ??
+      (throw const BusinessException('Variante introuvable.'));
+
+  Future<void> _applyMovement(
+    Actor actor,
+    String variantId,
+    StockKind kind,
+    int delta,
+    String reason, {
+    int? counted,
+  }) async {
+    await _variant(variantId);
+    final changed = await db.customUpdate(
+      'UPDATE variants SET stock = stock + ? WHERE id = ? AND stock + ? >= 0',
+      variables: [Variable(delta), Variable(variantId), Variable(delta)],
+      updates: {db.variants},
+    );
+    if (changed != 1) {
+      throw const BusinessException(
+        'Stock insuffisant : le stock ne peut pas devenir négatif.',
+      );
+    }
+    final id = uuid.v4();
+    final timestamp = now().toUtc().toIso8601String();
+    await db
+        .into(db.stockMovements)
+        .insert(
+          StockMovementsCompanion.insert(
+            id: id,
+            variantId: variantId,
+            kind: kind.code,
+            quantity: delta,
+            actorId: actor.id,
+            reason: reason,
+            originId: id,
+            occurredAt: timestamp,
+            counted: Value(counted),
+          ),
+        );
+    await appendEvent(id, 'stock.moved', actor, timestamp, {
+      'variant_id': variantId,
+      'kind': kind.code,
+      'quantity': delta,
+      'reason': reason,
+      'counted': ?counted,
+    });
+  }
+
+  /// Alert threshold and sale status; history and past sales are untouched.
+  Future<void> updateVariant(
+    Actor actor,
+    String variantId, {
+    int? threshold,
+    bool? active,
+  }) async {
+    actor.requireAdmin();
+    if (threshold == null && active == null) return;
+    if (threshold != null && (threshold < 0 || threshold > maxQuantity)) {
+      throw const BusinessException('Seuil invalide.');
+    }
+    await db.transaction(() async {
+      final variant = await _variant(variantId);
+      if ((threshold ?? variant.threshold) == variant.threshold &&
+          (active ?? variant.active) == variant.active) {
+        return;
+      }
+      await (db.update(
+        db.variants,
+      )..where((v) => v.id.equals(variantId))).write(
+        VariantsCompanion(
+          threshold: threshold == null
+              ? const Value.absent()
+              : Value(threshold),
+          active: active == null ? const Value.absent() : Value(active),
+        ),
+      );
+      await appendEvent(
+        uuid.v4(),
+        'variant.updated',
+        actor,
+        now().toUtc().toIso8601String(),
+        {'variant_id': variantId, 'threshold': ?threshold, 'active': ?active},
+      );
+    });
+  }
+
+  /// Stock history of a variant, newest first, with operator names.
+  Future<List<StockMovementView>> movements(String variantId) async {
+    final rows = await db
+        .customSelect(
+          'SELECT m.kind, m.quantity, m.reason, m.occurred_at, m.counted, '
+          'COALESCE(u.name, m.actor_id) AS actor FROM stock_movements m '
+          'LEFT JOIN users u ON u.id = m.actor_id WHERE m.variant_id = ? '
+          'ORDER BY m.occurred_at DESC, m.rowid DESC LIMIT 200',
+          variables: [Variable(variantId)],
+        )
+        .get();
+    return [
+      for (final r in rows)
+        StockMovementView(
+          kind: r.read<String>('kind'),
+          quantity: r.read<int>('quantity'),
+          reason: r.read<String>('reason'),
+          actor: r.read<String>('actor'),
+          occurredAt: r.read<String>('occurred_at'),
+          counted: r.readNullable<int>('counted'),
+        ),
+    ];
   }
 
   /// Single-variant shortcut kept for the existing flows and tests.
