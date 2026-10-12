@@ -126,6 +126,13 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Flutter : analyse sans anomalie, **48 tests réussis**. Contrat régénéré (13 événements, dont un retour). API : **24 réussis sur PostgreSQL 18.6**, 23 + 1 ignoré sur SQLite ; base de contrôle en `0006 (head)`.
 - APK 0.9.0+13 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.9.0-debug.apk`, SHA-256 `3D7BBACACDC3051ED007DBCF46E800F2E1DC9A70151E282AC366BFA8965518A3`. Essai sur l'appareil : à faire par l'utilisateur.
 
+## 0.9.1+14 — revue visuelle des tickets générés, code sur GitHub
+
+- Rendu PNG des tickets produits par l'application (vente, duplicata d'une vente annulée, remboursement, ticket test) via `test/receipt_render_test.dart` (à la demande : `--dart-define=RENDER_RECEIPTS=true --dart-define=FONT_DIR=<polices Material du SDK>`), sortie `.artifacts/receipts/`. Conformes à l'annexe client. Rendu écran : il ne remplace pas une vérification papier (police et retours à la ligne du service d'impression).
+- Le point médian « · » est retiré des désignations imprimées (caractère non vérifié sur l'imprimante) ; les accents ont été observés corrects sur papier.
+- Flutter : **48 tests réussis** (+1 de rendu ignoré par défaut). APK 0.9.1+14 mis à jour par USB, données conservées. Artefact `livrables/mono-recette-0.9.1-debug.apk`, SHA-256 `6C609644EE1CC78C8CB02AF60C355C5660A382CBFAABC5FF66DD11EDFB7B36E2`.
+- Code poussé sur `git@github.com:louisdevgp/military.git`, branche `main`.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

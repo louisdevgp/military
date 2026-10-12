@@ -276,7 +276,10 @@ List<ReceiptBlock> _table(List lines) => [
   ),
   for (final line in lines)
     ...() {
-      final designation = '${line['name']} ${line['label']}'.toUpperCase();
+      // No « · » on paper: unverified in the printer's character set.
+      final designation = '${line['name']} ${line['label']}'
+          .replaceAll(' · ', ' ')
+          .toUpperCase();
       final values = [
         amount(line['unit_price'] as int),
         '${line['quantity']}',
@@ -447,7 +450,9 @@ Receipt buildReturnReceipt(
     for (final line in lines)
       if (line['resaleable'] == false)
         ReceiptText(
-          'Endommagé : ${line['name']} ${line['label']}'.toUpperCase(),
+          'Endommagé : ${line['name']} ${line['label']}'
+              .replaceAll(' · ', ' ')
+              .toUpperCase(),
           size: ReceiptSize.small,
         ),
     const ReceiptFeed(),
