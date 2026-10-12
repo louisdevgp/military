@@ -155,6 +155,11 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - APK 0.10.0+15 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.10.0-debug.apk`, SHA-256 `8AEE9E3296F4FCA46B66441EDB897F59E641672937AC9C5F35FF2D6543B24791`. **Coffre Keystore non encore vérifié sur l'appareil** : à constater par l'utilisateur (configuration conservée après fermeture forcée).
 - Limite : la synchronisation automatique ne tourne que lorsque l'application est ouverte (pas de tâche Android en arrière-plan).
 
+## Correctif 0.10.1+16 — écran rouge au changement de code PIN
+
+- Constat sur le H10 (capture) : écran d'erreur Flutter `_dependents.isEmpty` après **Utilisateurs → Nouveau code PIN**. Reproduit par un test d'écran : champs de la fenêtre libérés pendant sa fermeture (« TextEditingController used after being disposed »). Correction : libération après la fin de l'animation, comme pour les autres fenêtres ; inventaire fait, plus aucune fenêtre concernée.
+- Flutter : **52 tests réussis** (dont `users_screen_test.dart`). APK 0.10.1+16 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.10.1-debug.apk`, SHA-256 `E7520A690FBB023DBE183F0FD8CEA3592A864B85655D28CDDC7DCCCF0B7913E1`.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

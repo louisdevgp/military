@@ -396,10 +396,13 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
         ),
       ),
     );
+    if (saved == true) await _reload();
+    // Let the dialog finish closing before releasing its fields (a disposed
+    // controller still in use crashed the H10 screen on a PIN change).
+    await Future<void>.delayed(const Duration(milliseconds: 350));
     for (final c in [name, pin, confirm]) {
       c.dispose();
     }
-    if (saved == true) await _reload();
   }
 
   @override
