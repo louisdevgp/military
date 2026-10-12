@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +10,7 @@ import '../data/settings_repository.dart';
 import '../domain/models.dart';
 import '../media/photo_service.dart';
 import '../printing/printer_service.dart';
+import '../sync/secure_store.dart';
 import '../sync/sync_service.dart';
 import 'session_controller.dart';
 
@@ -20,6 +24,20 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 final photoProvider = Provider<PhotoService>(
   (ref) => const AndroidPhotoService(),
 );
+
+/// Encrypted sync settings; Android Keystore in the app (see main.dart).
+final secureStoreProvider = Provider<SecureStore>((ref) => MemorySecureStore());
+
+/// Builds the transport; tests replace it with a fake server.
+final syncTransportFactoryProvider =
+    Provider<SyncTransport Function(Uri origin, String token)>(
+      (ref) => HttpSyncTransport.new,
+    );
+
+/// Background sync cadence and the short delay after an operation.
+const autoSyncInterval = Duration(minutes: 2);
+const autoSyncDelay = Duration(seconds: 5);
+
 final posProvider = NotifierProvider<PosController, PosState>(
   PosController.new,
 );
@@ -36,6 +54,10 @@ class PosState {
     this.receipt,
     this.terminalId = '',
     this.receiptSettings = const ReceiptSettings(),
+    this.syncStatus = const SyncStatus(),
+    this.syncOrigin,
+    this.autoSync = true,
+    this.syncing = false,
   });
   final List<CatalogItem> items;
   final Map<String, int> cart;
@@ -46,6 +68,12 @@ class PosState {
   final String terminalId;
   final ReceiptSettings receiptSettings;
   final bool busy;
+
+  /// Saved server origin (null = not configured), background sync switch
+  /// and a background run in progress (never blocks the cashier).
+  final SyncStatus syncStatus;
+  final String? syncOrigin;
+  final bool autoSync, syncing;
   int get cartQuantity => cart.values.fold(0, (sum, value) => sum + value);
   int get total => cart.entries.fold(
     0,
@@ -62,6 +90,10 @@ class PosState {
     Receipt? receipt,
     String? terminalId,
     ReceiptSettings? receiptSettings,
+    SyncStatus? syncStatus,
+    String? Function()? syncOrigin,
+    bool? autoSync,
+    bool? syncing,
   }) => PosState(
     items: items ?? this.items,
     cart: cart ?? this.cart,
@@ -73,6 +105,10 @@ class PosState {
     receipt: receipt ?? this.receipt,
     terminalId: terminalId ?? this.terminalId,
     receiptSettings: receiptSettings ?? this.receiptSettings,
+    syncStatus: syncStatus ?? this.syncStatus,
+    syncOrigin: syncOrigin == null ? this.syncOrigin : syncOrigin(),
+    autoSync: autoSync ?? this.autoSync,
+    syncing: syncing ?? this.syncing,
   );
 }
 
@@ -84,16 +120,29 @@ class PosController extends Notifier<PosState> {
         'Session verrouillée : saisissez votre code PIN.',
       ));
   SaleRequest? _submitted;
-  HttpSyncTransport? _transport;
+  SyncTransport? _transport;
   SyncService? _sync;
+  Timer? _periodic, _soon;
+  bool _configLoaded = false;
+
   @override
   PosState build() {
-    ref.onDispose(() => _transport?.close());
+    ref.onDispose(() {
+      _periodic?.cancel();
+      _soon?.cancel();
+      _transport?.close();
+    });
     return const PosState();
   }
 
+  SecureStore get _store => ref.read(secureStoreProvider);
+
   PosRepository get repo => ref.read(repositoryProvider);
   Future<void> refresh() async {
+    if (!_configLoaded) {
+      _configLoaded = true;
+      await _loadSyncConfig();
+    }
     final items = await repo.catalog();
     final sales = await repo.history();
     final terminal = await repo.terminal();
@@ -107,7 +156,9 @@ class PosController extends Notifier<PosState> {
       pending: await repo.pendingCount(),
       lastSync: terminal.lastSyncAt,
       terminalId: terminal.terminalId,
+      syncStatus: await repo.syncStatus(),
     );
+    _scheduleSoon();
   }
 
   void quantity(String id, int delta) {
@@ -632,29 +683,153 @@ class PosController extends Notifier<PosState> {
     state = state.copy(busy: false, message: message);
   }
 
-  void configureSync(String url, String token) {
-    actor.requireAdmin();
-    if (state.busy) {
-      throw const BusinessException('Une opération est en cours.');
+  /// Restores the saved server at startup; a broken entry is ignored.
+  Future<void> _loadSyncConfig() async {
+    try {
+      final origin = await _store.read('sync_origin');
+      final token = await _store.read('sync_token');
+      final auto = await _store.read('sync_auto');
+      state = state.copy(autoSync: auto != 'false');
+      if (origin != null && token != null) _connect(origin, token);
+    } catch (_) {
+      // Unreadable secure storage: the administrator configures it again.
     }
-    if (token.trim().isEmpty) {
-      throw const BusinessException('Jeton de recette requis.');
-    }
-    final next = HttpSyncTransport(Uri.parse(url.trim()), token.trim());
+  }
+
+  void _connect(String origin, String token) {
+    final next = ref.read(syncTransportFactoryProvider)(
+      Uri.parse(origin),
+      token,
+    );
     _transport?.close();
     _transport = next;
     _sync = SyncService(repo.db, next);
+    state = state.copy(syncOrigin: () => origin);
+    _armPeriodic();
+  }
+
+  void _armPeriodic() {
+    _periodic?.cancel();
+    if (_sync != null && state.autoSync) {
+      _periodic = Timer.periodic(autoSyncInterval, (_) => _autoSync());
+    }
+  }
+
+  /// A quick background run shortly after each recorded operation.
+  void _scheduleSoon() {
+    if (_sync == null || !state.autoSync || state.syncStatus.pending == 0) {
+      return;
+    }
+    _soon?.cancel();
+    _soon = Timer(autoSyncDelay, _autoSync);
+  }
+
+  /// Saves the server in the Keystore-backed store (administrator only),
+  /// then sends pending operations.
+  Future<bool> saveSyncConfig(String url, String token) async {
+    try {
+      actor.requireAdmin();
+      if (token.trim().length < 32) {
+        throw const BusinessException('Jeton invalide : copiez-le en entier.');
+      }
+      final origin = url.trim().replaceAll(RegExp(r'/+$'), '');
+      // Validates HTTPS and a bare origin before anything is stored.
+      HttpSyncTransport(Uri.parse(origin), token.trim()).close();
+      await _store.write('sync_origin', origin);
+      await _store.write('sync_token', token.trim());
+      _connect(origin, token.trim());
+    } on BusinessException catch (e) {
+      state = state.copy(message: e.message);
+      return false;
+    } catch (_) {
+      state = state.copy(message: 'Enregistrement sécurisé impossible.');
+      return false;
+    }
+    state = state.copy(message: 'Serveur enregistré de façon sécurisée.');
+    unawaited(synchronize());
+    return true;
+  }
+
+  Future<void> clearSyncConfig() async {
+    try {
+      actor.requireAdmin();
+      await _store.delete('sync_origin');
+      await _store.delete('sync_token');
+    } on BusinessException catch (e) {
+      state = state.copy(message: e.message);
+      return;
+    } catch (_) {
+      state = state.copy(message: 'Suppression impossible.');
+      return;
+    }
+    _periodic?.cancel();
+    _soon?.cancel();
+    _transport?.close();
+    _transport = null;
+    _sync = null;
     state = state.copy(
-      message: 'Connexion configurée pour cette session uniquement.',
+      syncOrigin: () => null,
+      message: 'Serveur oublié : synchronisation arrêtée, données conservées.',
     );
+  }
+
+  Future<void> setAutoSync(bool enabled) async {
+    try {
+      actor.requireAdmin();
+      await _store.write('sync_auto', '$enabled');
+    } on BusinessException catch (e) {
+      state = state.copy(message: e.message);
+      return;
+    } catch (_) {
+      state = state.copy(message: 'Réglage non enregistré.');
+      return;
+    }
+    state = state.copy(autoSync: enabled);
+    _armPeriodic();
+    if (!enabled) _soon?.cancel();
+  }
+
+  /// Test hook for the background run.
+  @visibleForTesting
+  Future<void> runAutoSync() => _autoSync();
+
+  /// Background run: silent, respects the retry delay of a blocked
+  /// operation, never runs during a sale or another sync.
+  Future<void> _autoSync() async {
+    final sync = _sync;
+    if (sync == null || !state.autoSync || state.busy || state.syncing) return;
+    state = state.copy(syncing: true);
+    try {
+      if ((await repo.pendingCount()) > 0) {
+        await _transport?.wake();
+        await sync.synchronize();
+      }
+    } catch (_) {
+      // Recorded on the operation (error code, next attempt); data is kept.
+    }
+    try {
+      final terminal = await repo.terminal();
+      state = state.copy(
+        syncing: false,
+        pending: await repo.pendingCount(),
+        lastSync: terminal.lastSyncAt,
+        syncStatus: await repo.syncStatus(),
+      );
+    } catch (_) {
+      state = state.copy(syncing: false);
+    }
   }
 
   Future<void> synchronize() async {
     if (state.busy) return;
     if (_sync == null) {
       state = state.copy(
-        message: 'Configurez le serveur de recette avec l’icône Réglages.',
+        message: 'Serveur non configuré : Administration → Synchronisation.',
       );
+      return;
+    }
+    if (state.syncing) {
+      state = state.copy(message: 'Synchronisation automatique en cours…');
       return;
     }
     state = state.copy(
@@ -669,12 +844,17 @@ class PosController extends Notifier<PosState> {
     } on BusinessException catch (e) {
       message = e.message;
     } catch (_) {
-      message = 'Synchronisation indisponible. Données conservées localement.';
+      message =
+          'Serveur injoignable. Données conservées, nouvel essai automatique.';
     }
     try {
       await refresh();
     } catch (_) {
       message = '$message Actualisation impossible.';
+    }
+    final error = state.syncStatus.errorCode;
+    if (error != null && state.syncStatus.pending > 0) {
+      message = '$message ${syncErrorLabel(error)}';
     }
     state = state.copy(busy: false, message: message);
   }

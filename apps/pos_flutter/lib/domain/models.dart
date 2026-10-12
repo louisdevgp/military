@@ -273,6 +273,39 @@ class SaleRequest {
   };
 }
 
+class SyncStatus {
+  const SyncStatus({
+    this.pending = 0,
+    this.lastSyncAt,
+    this.errorCode,
+    this.attempts = 0,
+    this.nextAttemptAt,
+  });
+  final int pending, attempts;
+  final String? lastSyncAt, errorCode, nextAttemptAt;
+}
+
+/// Operator-facing explanation of a sync error code (HTTP status and the
+/// server's technical code). Data always stays on the terminal.
+String syncErrorLabel(String code) {
+  final status = code.split(':').first;
+  final detail = code.contains(':') ? code.split(':').last : '';
+  final text = switch (status) {
+    'HTTP_401' => 'Jeton refusé ou expiré : demandez un nouveau jeton.',
+    'HTTP_403' =>
+      detail == 'ADMIN_REQUIRED'
+          ? 'Opération réservée à un administrateur côté serveur.'
+          : 'Terminal ou utilisateur non autorisé par le serveur.',
+    'HTTP_409' => 'Opération refusée par le serveur (incohérence).',
+    'HTTP_422' => 'Données refusées par le serveur.',
+    'HTTP_413' => 'Opération trop volumineuse.',
+    'INVALID_ACK' => 'Réponse du serveur invalide.',
+    _ when status.startsWith('HTTP_5') => 'Serveur momentanément indisponible.',
+    _ => 'Réseau ou serveur injoignable.',
+  };
+  return detail.isEmpty ? text : '$text ($detail)';
+}
+
 /// Return or full cancellation of a recorded sale. [id] is the operation
 /// UUID: a repeated request with the same content refunds only once.
 class ReturnRequest {

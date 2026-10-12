@@ -12,11 +12,16 @@ class SyncFailure implements Exception {
   final String code;
 }
 
-abstract interface class SyncTransport {
+abstract class SyncTransport {
   Future<Map<String, dynamic>> send(Map<String, dynamic> envelope);
+
+  /// Called once before a batch; hosted servers may need to wake up.
+  Future<void> wake() async {}
+
+  void close() {}
 }
 
-class HttpSyncTransport implements SyncTransport {
+class HttpSyncTransport extends SyncTransport {
   HttpSyncTransport(this.baseUrl, this.accessToken, {http.Client? client})
     : client = client ?? http.Client() {
     if (baseUrl.scheme != 'https' &&
@@ -55,13 +60,30 @@ class HttpSyncTransport implements SyncTransport {
     final response = await http.Response.fromStream(streamed)
         .timeout(const Duration(seconds: 15));
     if (response.statusCode != 200) {
-      throw SyncFailure('HTTP_${response.statusCode}');
+      throw SyncFailure(_failureCode(response));
     }
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// HTTP status plus the server's technical code (e.g. HTTP_409:
+  /// SALE_NUMBER_MISMATCH). Only upper-case codes are kept: never a body
+  /// fragment that could carry data.
+  static String _failureCode(http.Response response) {
+    var code = 'HTTP_${response.statusCode}';
+    try {
+      final detail = (jsonDecode(response.body) as Map)['detail'];
+      if (detail is String && RegExp(r'^[A-Z_]{3,40}$').hasMatch(detail)) {
+        code = '$code:$detail';
+      }
+    } catch (_) {
+      // Non-JSON body: the status code alone is reported.
+    }
+    return code;
+  }
+
   /// Free hosting sleeps when idle and needs about a minute to wake up:
   /// one patient health request before the first event avoids a false error.
+  @override
   Future<void> wake() async {
     final response = await client
         .get(baseUrl.resolve('/health/ready'))
@@ -71,6 +93,7 @@ class HttpSyncTransport implements SyncTransport {
     }
   }
 
+  @override
   void close() => client.close();
 }
 

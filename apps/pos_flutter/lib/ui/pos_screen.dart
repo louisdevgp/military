@@ -14,6 +14,7 @@ import 'receipt_preview.dart';
 import 'receipt_settings_screen.dart';
 import 'return_screen.dart';
 import 'stock_screen.dart';
+import 'sync_screen.dart';
 
 class PosScreen extends ConsumerStatefulWidget {
   const PosScreen({super.key});
@@ -1289,80 +1290,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     ),
   );
 
-  Future<void> _syncSettings() async {
-    final url = TextEditingController(), token = TextEditingController();
-    String? error;
-    await showDialog<void>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialog) => AlertDialog(
-          title: const Text('Serveur de recette'),
-          content: SizedBox(
-            width: 420,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SelectableText(
-                    'Terminal : ${ref.read(posProvider).terminalId}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: url,
-                    decoration: const InputDecoration(
-                      labelText: 'Origine HTTPS du serveur',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: token,
-                    obscureText: true,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    decoration: const InputDecoration(
-                      labelText: 'Jeton temporaire de recette',
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Connexion conservée pour cette session uniquement. Synchronisation manuelle.',
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  if (error != null)
-                    Text(error!, style: const TextStyle(color: Colors.red)),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              onPressed: () {
-                try {
-                  ref
-                      .read(posProvider.notifier)
-                      .configureSync(url.text, token.text);
-                  Navigator.pop(context);
-                } catch (e) {
-                  setDialog(
-                    () => error = e is BusinessException
-                        ? e.message
-                        : 'Adresse invalide.',
-                  );
-                }
-              },
-              child: const Text('Configurer'),
-            ),
-          ],
-        ),
-      ),
-    );
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    url.dispose();
-    token.dispose();
-  }
+  Future<void> _syncSettings() => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (_) => const SyncScreen()),
+  );
 }

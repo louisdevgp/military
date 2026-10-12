@@ -145,6 +145,16 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Synchronisation réelle depuis le H10 vers `https://mono-api-recette.onrender.com` : **réussie selon l'utilisateur** (« tout marche » : synchronisation, nouvelle vente, contrôle dans Supabase). Constat sur l'appareil par lecture de la base : **11/11 opérations `synced`**, aucune en attente ni en erreur, dernière synchronisation `2026-10-12T21:13:04Z`, 3 ventes.
 - Limites inchangées : synchronisation manuelle, configuration à ressaisir après redémarrage (lot 4), jeton de recette partagé.
 
+## Incrément 0.10.0+15 — synchronisation automatique et réglages sécurisés (lot 4)
+
+- Réglages serveur (origine, jeton, interrupteur automatique) chiffrés AES-GCM avec une clé AndroidKeyStore non exportable (`SecureStoreBridge.kt`, sans dépendance tierce), stockés en préférences privées ; `allowBackup=false` déjà en place ; clés autorisées limitées ; valeur illisible → oubliée et redemandée. Plus de ressaisie au redémarrage.
+- Synchronisation automatique : 5 s après chaque opération enregistrée et toutes les 2 minutes, en arrière-plan (jamais pendant une validation, jamais en double), respect du délai progressif d'une opération en erreur ; la synchronisation manuelle réessaie immédiatement. Interrupteur administrateur.
+- Écran **Synchronisation** (Administration) : opérations en attente, dernière synchronisation, dernière erreur expliquée avec le code technique du serveur (`HTTP_409:SALE_NUMBER_MISMATCH`…), nombre d'essais et prochain essai, serveur enregistré (changer / oublier).
+- Codes d'erreur : seul un code majuscule du corps de réponse est conservé, jamais un fragment de contenu.
+- Flutter : analyse sans anomalie, **51 tests réussis** (refus vendeur, HTTPS obligatoire, jeton tronqué, réglages retrouvés après redémarrage, envoi automatique, erreur conservée et délai respecté, arrêt et oubli, filtrage des codes). API inchangée.
+- APK 0.10.0+15 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.10.0-debug.apk`, SHA-256 `8AEE9E3296F4FCA46B66441EDB897F59E641672937AC9C5F35FF2D6543B24791`. **Coffre Keystore non encore vérifié sur l'appareil** : à constater par l'utilisateur (configuration conservée après fermeture forcée).
+- Limite : la synchronisation automatique ne tourne que lorsque l'application est ouverte (pas de tâche Android en arrière-plan).
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

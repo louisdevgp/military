@@ -25,7 +25,7 @@ Lots à réaliser, dans cet ordre, chacun validé (analyse, tests, PostgreSQL, A
 1. ✅ (0.8.0) Mouvements de stock : réception, perte, correction, inventaire (quantité comptée et écart tracés), seuil de stock faible, désactivation/réactivation, historique par variante.
 2. ✅ (0.9.0) Retours et annulations : annulation complète, retour partiel cumulé borné, remboursement unique, revendable/endommagé.
 3. Dépenses, rapports (jour, semaine, mois, année, période libre, fuseau Africa/Abidjan), alertes stock, export CSV, clôture de caisse.
-4. Synchronisation automatique et réglages serveur conservés de façon sécurisée.
+4. ✅ (0.10.0) Synchronisation automatique et réglages serveur conservés de façon sécurisée.
 5. Sauvegarde et restauration (base et photos), réconciliation des séquences.
 6. Fiches client et champs obligatoires configurables.
 7. Sécurité de production : activation du terminal, jetons courts renouvelés, Keystore, base chiffrée, **récupération de l'accès administrateur** (code de secours affiché à l'activation ou second administrateur obligatoire), auditée.

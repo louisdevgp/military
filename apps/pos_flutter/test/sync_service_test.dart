@@ -5,7 +5,7 @@ import 'package:mono_pos/data/pos_repository.dart';
 import 'package:mono_pos/domain/models.dart';
 import 'package:mono_pos/sync/sync_service.dart';
 
-class FakeServer implements SyncTransport {
+class FakeServer extends SyncTransport {
   bool loseResponse = true;
   bool invalidAck = false;
   int calls = 0;

@@ -1173,6 +1173,24 @@ class PosRepository {
     });
   }
 
+  /// First blocked operation (error code, attempts, next try) and totals.
+  Future<SyncStatus> syncStatus() async {
+    final blocked =
+        await (db.select(db.outboxEntries)
+              ..where((e) => e.status.equals('synced').not())
+              ..orderBy([(e) => OrderingTerm.asc(e.sequence)])
+              ..limit(1))
+            .getSingleOrNull();
+    final terminal = await this.terminal();
+    return SyncStatus(
+      pending: await pendingCount(),
+      lastSyncAt: terminal.lastSyncAt,
+      errorCode: blocked?.errorCode,
+      attempts: blocked?.attempts ?? 0,
+      nextAttemptAt: blocked?.nextAttemptAt,
+    );
+  }
+
   Future<int> pendingCount() async {
     final count = db.outboxEntries.id.count();
     final query = db.selectOnly(db.outboxEntries)

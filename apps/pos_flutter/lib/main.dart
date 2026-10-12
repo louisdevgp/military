@@ -8,6 +8,7 @@ import 'application/session_controller.dart';
 import 'data/database.dart';
 import 'data/pos_repository.dart';
 import 'printing/printer_service.dart';
+import 'sync/secure_store.dart';
 import 'ui/auth_screens.dart';
 import 'ui/pos_screen.dart';
 import 'ui/mono_theme.dart';
@@ -42,6 +43,8 @@ Future<void> main() async {
         overrides: [
           repositoryProvider.overrideWithValue(repo),
           printerProvider.overrideWithValue(printer),
+          if (Platform.isAndroid)
+            secureStoreProvider.overrideWithValue(const AndroidSecureStore()),
         ],
         child: const MonoApp(),
       ),

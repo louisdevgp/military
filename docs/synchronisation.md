@@ -10,7 +10,7 @@ L’outbox est écrite dans la transaction locale de l’opération. Le serveur 
 
 Le serveur contrôle de nouveau prix historique, quantités, disponibilité, numéro, total, espèces et monnaie. Une erreur annule aussi les mouvements déjà préparés. Le serveur accuse `status=committed`, UUID, terminal, séquence et `received_at` seulement après commit. Un rejeu identique retrouve le même accusé et la même date de réception.
 
-Le client contrôle les champs de l’accusé, marque l’événement synchronisé localement et conserve une date de dernière synchronisation. Il n’écrit jamais un stock reçu du serveur. En cas d’erreur : arrêt à la première opération, code technique sans payload personnel, compteur de tentatives et prochain délai 5 s, 10 s, 20 s… jusqu’à une heure. Le bouton manuel permet une reprise immédiate. Le service sait respecter le délai lors d’un appel non manuel ; **aucun ordonnanceur automatique n’est encore branché dans l’application**.
+Le client contrôle les champs de l’accusé, marque l’événement synchronisé localement et conserve une date de dernière synchronisation. Il n’écrit jamais un stock reçu du serveur. En cas d’erreur : arrêt à la première opération, code technique sans payload personnel, compteur de tentatives et prochain délai 5 s, 10 s, 20 s… jusqu’à une heure. Le bouton manuel permet une reprise immédiate. Le service sait respecter le délai lors d’un appel non manuel ; depuis 0.10.0, l'application synchronise automatiquement (5 s après une opération, toutes les 2 min, application ouverte) avec des réglages chiffrés par le Keystore Android.
 
 ## Sécurité et limites de la recette
 

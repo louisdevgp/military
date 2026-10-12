@@ -8,10 +8,22 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
     private lateinit var photos: PhotoBridge
     private lateinit var printer: PrinterBridge
+    private lateinit var secrets: SecureStoreBridge
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         photos = PhotoBridge(this)
         printer = PrinterBridge(applicationContext)
+        secrets = SecureStoreBridge(applicationContext)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ci.universdumono/secure")
+            .setMethodCallHandler { call, result ->
+                val name = call.argument<String>("key")
+                when (call.method) {
+                    "write" -> secrets.write(name, call.argument<String>("value"), result)
+                    "read" -> secrets.read(name, result)
+                    "delete" -> secrets.delete(name, result)
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ci.universdumono/photos")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

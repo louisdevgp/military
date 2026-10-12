@@ -53,7 +53,7 @@ Quand une nouvelle couleur ou taille arrive : toucher l'article, **Couleurs / ta
 5. Les données client sont facultatives dans cette tranche. Valider : la vente, le stock et l’opération à synchroniser sont enregistrés ensemble.
 6. Le ticket est envoyé à l’imprimante intégrée du H10, ou à la simulation si le service ne répond pas (le nom de l’imprimante est indiqué au-dessus de l’aperçu). Le service ne dit pas si le papier est sorti : vérifier le ticket. Un échec d’impression ne justifie jamais une nouvelle vente ; utiliser le duplicata.
 7. Dans **Historique**, l’icône d’impression affiche un **DUPLICATA** du même numéro. Les 100 dernières ventes sont affichées.
-8. Les réglages (administrateur) permettent d’indiquer un serveur de recette et son jeton temporaire. Le bouton de synchronisation envoie les opérations dans l’ordre. Le compteur diminue seulement après confirmation du serveur.
+8. **Administration → Synchronisation** (administrateur) : saisir une seule fois l'adresse du serveur et le jeton ; ils sont conservés de façon chiffrée. La synchronisation est ensuite automatique (après chaque opération et toutes les 2 minutes, application ouverte) ; l'écran indique les opérations en attente, la dernière synchronisation et la dernière erreur avec son explication. Le compteur diminue seulement après confirmation du serveur.
 
 Si la synchronisation échoue, les ventes restent locales et visibles. Ne pas réinstaller l’application, effacer ses données ni remplacer sa base pour résoudre une erreur réseau. En cas de conflit d’identité/séquence, conserver la base et les journaux techniques sans données personnelles pour analyse.
 
