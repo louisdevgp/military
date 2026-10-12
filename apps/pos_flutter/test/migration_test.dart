@@ -57,7 +57,7 @@ void main() {
         (await db.customSelect('PRAGMA user_version').getSingle()).read<int>(
           'user_version',
         ),
-        7,
+        8,
       );
       expect(await db.select(db.users).get(), isEmpty);
       expect(await db.select(db.saleCorrections).get(), isEmpty);
@@ -106,7 +106,7 @@ void main() {
       (await db.customSelect('PRAGMA user_version').getSingle()).read<int>(
         'user_version',
       ),
-      7,
+      8,
     );
     expect((await db.customSelect('PRAGMA foreign_key_check').get()), isEmpty);
     await db.close();

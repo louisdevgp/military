@@ -5486,6 +5486,1605 @@ class SaleReturnLinesCompanion extends UpdateCompanion<SaleReturnLine> {
   }
 }
 
+class $ExpensesTable extends Expenses with TableInfo<$ExpensesTable, Expense> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExpensesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    check: () =>
+        const CustomExpression<bool>("kind IN ('CHARGE', 'STOCK', 'TREASURY')"),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>('amount > 0'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _paymentModeMeta = const VerificationMeta(
+    'paymentMode',
+  );
+  @override
+  late final GeneratedColumn<String> paymentMode = GeneratedColumn<String>(
+    'payment_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<String> occurredAt = GeneratedColumn<String>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorIdMeta = const VerificationMeta(
+    'actorId',
+  );
+  @override
+  late final GeneratedColumn<String> actorId = GeneratedColumn<String>(
+    'actor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorNameMeta = const VerificationMeta(
+    'actorName',
+  );
+  @override
+  late final GeneratedColumn<String> actorName = GeneratedColumn<String>(
+    'actor_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recordedAtMeta = const VerificationMeta(
+    'recordedAt',
+  );
+  @override
+  late final GeneratedColumn<String> recordedAt = GeneratedColumn<String>(
+    'recorded_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cancelledAtMeta = const VerificationMeta(
+    'cancelledAt',
+  );
+  @override
+  late final GeneratedColumn<String> cancelledAt = GeneratedColumn<String>(
+    'cancelled_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cancelReasonMeta = const VerificationMeta(
+    'cancelReason',
+  );
+  @override
+  late final GeneratedColumn<String> cancelReason = GeneratedColumn<String>(
+    'cancel_reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cancelledByMeta = const VerificationMeta(
+    'cancelledBy',
+  );
+  @override
+  late final GeneratedColumn<String> cancelledBy = GeneratedColumn<String>(
+    'cancelled_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    category,
+    amount,
+    paymentMode,
+    reason,
+    occurredAt,
+    actorId,
+    actorName,
+    recordedAt,
+    cancelledAt,
+    cancelReason,
+    cancelledBy,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'expenses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Expense> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('payment_mode')) {
+      context.handle(
+        _paymentModeMeta,
+        paymentMode.isAcceptableOrUnknown(
+          data['payment_mode']!,
+          _paymentModeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_paymentModeMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('actor_id')) {
+      context.handle(
+        _actorIdMeta,
+        actorId.isAcceptableOrUnknown(data['actor_id']!, _actorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorIdMeta);
+    }
+    if (data.containsKey('actor_name')) {
+      context.handle(
+        _actorNameMeta,
+        actorName.isAcceptableOrUnknown(data['actor_name']!, _actorNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorNameMeta);
+    }
+    if (data.containsKey('recorded_at')) {
+      context.handle(
+        _recordedAtMeta,
+        recordedAt.isAcceptableOrUnknown(data['recorded_at']!, _recordedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_recordedAtMeta);
+    }
+    if (data.containsKey('cancelled_at')) {
+      context.handle(
+        _cancelledAtMeta,
+        cancelledAt.isAcceptableOrUnknown(
+          data['cancelled_at']!,
+          _cancelledAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cancel_reason')) {
+      context.handle(
+        _cancelReasonMeta,
+        cancelReason.isAcceptableOrUnknown(
+          data['cancel_reason']!,
+          _cancelReasonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cancelled_by')) {
+      context.handle(
+        _cancelledByMeta,
+        cancelledBy.isAcceptableOrUnknown(
+          data['cancelled_by']!,
+          _cancelledByMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Expense map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Expense(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      paymentMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payment_mode'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      actorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_id'],
+      )!,
+      actorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_name'],
+      )!,
+      recordedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recorded_at'],
+      )!,
+      cancelledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cancelled_at'],
+      ),
+      cancelReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cancel_reason'],
+      ),
+      cancelledBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cancelled_by'],
+      ),
+    );
+  }
+
+  @override
+  $ExpensesTable createAlias(String alias) {
+    return $ExpensesTable(attachedDatabase, alias);
+  }
+}
+
+class Expense extends DataClass implements Insertable<Expense> {
+  final String id;
+  final String kind;
+  final String category;
+  final int amount;
+  final String paymentMode;
+  final String reason;
+  final String occurredAt;
+  final String actorId;
+  final String actorName;
+  final String recordedAt;
+  final String? cancelledAt;
+  final String? cancelReason;
+  final String? cancelledBy;
+  const Expense({
+    required this.id,
+    required this.kind,
+    required this.category,
+    required this.amount,
+    required this.paymentMode,
+    required this.reason,
+    required this.occurredAt,
+    required this.actorId,
+    required this.actorName,
+    required this.recordedAt,
+    this.cancelledAt,
+    this.cancelReason,
+    this.cancelledBy,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['category'] = Variable<String>(category);
+    map['amount'] = Variable<int>(amount);
+    map['payment_mode'] = Variable<String>(paymentMode);
+    map['reason'] = Variable<String>(reason);
+    map['occurred_at'] = Variable<String>(occurredAt);
+    map['actor_id'] = Variable<String>(actorId);
+    map['actor_name'] = Variable<String>(actorName);
+    map['recorded_at'] = Variable<String>(recordedAt);
+    if (!nullToAbsent || cancelledAt != null) {
+      map['cancelled_at'] = Variable<String>(cancelledAt);
+    }
+    if (!nullToAbsent || cancelReason != null) {
+      map['cancel_reason'] = Variable<String>(cancelReason);
+    }
+    if (!nullToAbsent || cancelledBy != null) {
+      map['cancelled_by'] = Variable<String>(cancelledBy);
+    }
+    return map;
+  }
+
+  ExpensesCompanion toCompanion(bool nullToAbsent) {
+    return ExpensesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      category: Value(category),
+      amount: Value(amount),
+      paymentMode: Value(paymentMode),
+      reason: Value(reason),
+      occurredAt: Value(occurredAt),
+      actorId: Value(actorId),
+      actorName: Value(actorName),
+      recordedAt: Value(recordedAt),
+      cancelledAt: cancelledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cancelledAt),
+      cancelReason: cancelReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cancelReason),
+      cancelledBy: cancelledBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cancelledBy),
+    );
+  }
+
+  factory Expense.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Expense(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      category: serializer.fromJson<String>(json['category']),
+      amount: serializer.fromJson<int>(json['amount']),
+      paymentMode: serializer.fromJson<String>(json['paymentMode']),
+      reason: serializer.fromJson<String>(json['reason']),
+      occurredAt: serializer.fromJson<String>(json['occurredAt']),
+      actorId: serializer.fromJson<String>(json['actorId']),
+      actorName: serializer.fromJson<String>(json['actorName']),
+      recordedAt: serializer.fromJson<String>(json['recordedAt']),
+      cancelledAt: serializer.fromJson<String?>(json['cancelledAt']),
+      cancelReason: serializer.fromJson<String?>(json['cancelReason']),
+      cancelledBy: serializer.fromJson<String?>(json['cancelledBy']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'category': serializer.toJson<String>(category),
+      'amount': serializer.toJson<int>(amount),
+      'paymentMode': serializer.toJson<String>(paymentMode),
+      'reason': serializer.toJson<String>(reason),
+      'occurredAt': serializer.toJson<String>(occurredAt),
+      'actorId': serializer.toJson<String>(actorId),
+      'actorName': serializer.toJson<String>(actorName),
+      'recordedAt': serializer.toJson<String>(recordedAt),
+      'cancelledAt': serializer.toJson<String?>(cancelledAt),
+      'cancelReason': serializer.toJson<String?>(cancelReason),
+      'cancelledBy': serializer.toJson<String?>(cancelledBy),
+    };
+  }
+
+  Expense copyWith({
+    String? id,
+    String? kind,
+    String? category,
+    int? amount,
+    String? paymentMode,
+    String? reason,
+    String? occurredAt,
+    String? actorId,
+    String? actorName,
+    String? recordedAt,
+    Value<String?> cancelledAt = const Value.absent(),
+    Value<String?> cancelReason = const Value.absent(),
+    Value<String?> cancelledBy = const Value.absent(),
+  }) => Expense(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    category: category ?? this.category,
+    amount: amount ?? this.amount,
+    paymentMode: paymentMode ?? this.paymentMode,
+    reason: reason ?? this.reason,
+    occurredAt: occurredAt ?? this.occurredAt,
+    actorId: actorId ?? this.actorId,
+    actorName: actorName ?? this.actorName,
+    recordedAt: recordedAt ?? this.recordedAt,
+    cancelledAt: cancelledAt.present ? cancelledAt.value : this.cancelledAt,
+    cancelReason: cancelReason.present ? cancelReason.value : this.cancelReason,
+    cancelledBy: cancelledBy.present ? cancelledBy.value : this.cancelledBy,
+  );
+  Expense copyWithCompanion(ExpensesCompanion data) {
+    return Expense(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      category: data.category.present ? data.category.value : this.category,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      paymentMode: data.paymentMode.present
+          ? data.paymentMode.value
+          : this.paymentMode,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      actorId: data.actorId.present ? data.actorId.value : this.actorId,
+      actorName: data.actorName.present ? data.actorName.value : this.actorName,
+      recordedAt: data.recordedAt.present
+          ? data.recordedAt.value
+          : this.recordedAt,
+      cancelledAt: data.cancelledAt.present
+          ? data.cancelledAt.value
+          : this.cancelledAt,
+      cancelReason: data.cancelReason.present
+          ? data.cancelReason.value
+          : this.cancelReason,
+      cancelledBy: data.cancelledBy.present
+          ? data.cancelledBy.value
+          : this.cancelledBy,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Expense(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('category: $category, ')
+          ..write('amount: $amount, ')
+          ..write('paymentMode: $paymentMode, ')
+          ..write('reason: $reason, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('actorId: $actorId, ')
+          ..write('actorName: $actorName, ')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('cancelledAt: $cancelledAt, ')
+          ..write('cancelReason: $cancelReason, ')
+          ..write('cancelledBy: $cancelledBy')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    category,
+    amount,
+    paymentMode,
+    reason,
+    occurredAt,
+    actorId,
+    actorName,
+    recordedAt,
+    cancelledAt,
+    cancelReason,
+    cancelledBy,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Expense &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.category == this.category &&
+          other.amount == this.amount &&
+          other.paymentMode == this.paymentMode &&
+          other.reason == this.reason &&
+          other.occurredAt == this.occurredAt &&
+          other.actorId == this.actorId &&
+          other.actorName == this.actorName &&
+          other.recordedAt == this.recordedAt &&
+          other.cancelledAt == this.cancelledAt &&
+          other.cancelReason == this.cancelReason &&
+          other.cancelledBy == this.cancelledBy);
+}
+
+class ExpensesCompanion extends UpdateCompanion<Expense> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> category;
+  final Value<int> amount;
+  final Value<String> paymentMode;
+  final Value<String> reason;
+  final Value<String> occurredAt;
+  final Value<String> actorId;
+  final Value<String> actorName;
+  final Value<String> recordedAt;
+  final Value<String?> cancelledAt;
+  final Value<String?> cancelReason;
+  final Value<String?> cancelledBy;
+  final Value<int> rowid;
+  const ExpensesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.category = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.paymentMode = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.actorId = const Value.absent(),
+    this.actorName = const Value.absent(),
+    this.recordedAt = const Value.absent(),
+    this.cancelledAt = const Value.absent(),
+    this.cancelReason = const Value.absent(),
+    this.cancelledBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExpensesCompanion.insert({
+    required String id,
+    required String kind,
+    required String category,
+    required int amount,
+    required String paymentMode,
+    required String reason,
+    required String occurredAt,
+    required String actorId,
+    required String actorName,
+    required String recordedAt,
+    this.cancelledAt = const Value.absent(),
+    this.cancelReason = const Value.absent(),
+    this.cancelledBy = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       category = Value(category),
+       amount = Value(amount),
+       paymentMode = Value(paymentMode),
+       reason = Value(reason),
+       occurredAt = Value(occurredAt),
+       actorId = Value(actorId),
+       actorName = Value(actorName),
+       recordedAt = Value(recordedAt);
+  static Insertable<Expense> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? category,
+    Expression<int>? amount,
+    Expression<String>? paymentMode,
+    Expression<String>? reason,
+    Expression<String>? occurredAt,
+    Expression<String>? actorId,
+    Expression<String>? actorName,
+    Expression<String>? recordedAt,
+    Expression<String>? cancelledAt,
+    Expression<String>? cancelReason,
+    Expression<String>? cancelledBy,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (category != null) 'category': category,
+      if (amount != null) 'amount': amount,
+      if (paymentMode != null) 'payment_mode': paymentMode,
+      if (reason != null) 'reason': reason,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (actorId != null) 'actor_id': actorId,
+      if (actorName != null) 'actor_name': actorName,
+      if (recordedAt != null) 'recorded_at': recordedAt,
+      if (cancelledAt != null) 'cancelled_at': cancelledAt,
+      if (cancelReason != null) 'cancel_reason': cancelReason,
+      if (cancelledBy != null) 'cancelled_by': cancelledBy,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExpensesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? category,
+    Value<int>? amount,
+    Value<String>? paymentMode,
+    Value<String>? reason,
+    Value<String>? occurredAt,
+    Value<String>? actorId,
+    Value<String>? actorName,
+    Value<String>? recordedAt,
+    Value<String?>? cancelledAt,
+    Value<String?>? cancelReason,
+    Value<String?>? cancelledBy,
+    Value<int>? rowid,
+  }) {
+    return ExpensesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      category: category ?? this.category,
+      amount: amount ?? this.amount,
+      paymentMode: paymentMode ?? this.paymentMode,
+      reason: reason ?? this.reason,
+      occurredAt: occurredAt ?? this.occurredAt,
+      actorId: actorId ?? this.actorId,
+      actorName: actorName ?? this.actorName,
+      recordedAt: recordedAt ?? this.recordedAt,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      cancelReason: cancelReason ?? this.cancelReason,
+      cancelledBy: cancelledBy ?? this.cancelledBy,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (paymentMode.present) {
+      map['payment_mode'] = Variable<String>(paymentMode.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<String>(occurredAt.value);
+    }
+    if (actorId.present) {
+      map['actor_id'] = Variable<String>(actorId.value);
+    }
+    if (actorName.present) {
+      map['actor_name'] = Variable<String>(actorName.value);
+    }
+    if (recordedAt.present) {
+      map['recorded_at'] = Variable<String>(recordedAt.value);
+    }
+    if (cancelledAt.present) {
+      map['cancelled_at'] = Variable<String>(cancelledAt.value);
+    }
+    if (cancelReason.present) {
+      map['cancel_reason'] = Variable<String>(cancelReason.value);
+    }
+    if (cancelledBy.present) {
+      map['cancelled_by'] = Variable<String>(cancelledBy.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExpensesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('category: $category, ')
+          ..write('amount: $amount, ')
+          ..write('paymentMode: $paymentMode, ')
+          ..write('reason: $reason, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('actorId: $actorId, ')
+          ..write('actorName: $actorName, ')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('cancelledAt: $cancelledAt, ')
+          ..write('cancelReason: $cancelReason, ')
+          ..write('cancelledBy: $cancelledBy, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $CashClosingsTable extends CashClosings
+    with TableInfo<$CashClosingsTable, CashClosing> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CashClosingsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _periodStartMeta = const VerificationMeta(
+    'periodStart',
+  );
+  @override
+  late final GeneratedColumn<String> periodStart = GeneratedColumn<String>(
+    'period_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _closedAtMeta = const VerificationMeta(
+    'closedAt',
+  );
+  @override
+  late final GeneratedColumn<String> closedAt = GeneratedColumn<String>(
+    'closed_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _openingFloatMeta = const VerificationMeta(
+    'openingFloat',
+  );
+  @override
+  late final GeneratedColumn<int> openingFloat = GeneratedColumn<int>(
+    'opening_float',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cashSalesMeta = const VerificationMeta(
+    'cashSales',
+  );
+  @override
+  late final GeneratedColumn<int> cashSales = GeneratedColumn<int>(
+    'cash_sales',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cashRefundsMeta = const VerificationMeta(
+    'cashRefunds',
+  );
+  @override
+  late final GeneratedColumn<int> cashRefunds = GeneratedColumn<int>(
+    'cash_refunds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cashExpensesMeta = const VerificationMeta(
+    'cashExpenses',
+  );
+  @override
+  late final GeneratedColumn<int> cashExpenses = GeneratedColumn<int>(
+    'cash_expenses',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expectedMeta = const VerificationMeta(
+    'expected',
+  );
+  @override
+  late final GeneratedColumn<int> expected = GeneratedColumn<int>(
+    'expected',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _countedMeta = const VerificationMeta(
+    'counted',
+  );
+  @override
+  late final GeneratedColumn<int> counted = GeneratedColumn<int>(
+    'counted',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>('counted >= 0'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _differenceMeta = const VerificationMeta(
+    'difference',
+  );
+  @override
+  late final GeneratedColumn<int> difference = GeneratedColumn<int>(
+    'difference',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _keptFloatMeta = const VerificationMeta(
+    'keptFloat',
+  );
+  @override
+  late final GeneratedColumn<int> keptFloat = GeneratedColumn<int>(
+    'kept_float',
+    aliasedName,
+    false,
+    check: () => const CustomExpression<bool>('kept_float >= 0'),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _commentMeta = const VerificationMeta(
+    'comment',
+  );
+  @override
+  late final GeneratedColumn<String> comment = GeneratedColumn<String>(
+    'comment',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorIdMeta = const VerificationMeta(
+    'actorId',
+  );
+  @override
+  late final GeneratedColumn<String> actorId = GeneratedColumn<String>(
+    'actor_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actorNameMeta = const VerificationMeta(
+    'actorName',
+  );
+  @override
+  late final GeneratedColumn<String> actorName = GeneratedColumn<String>(
+    'actor_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    periodStart,
+    closedAt,
+    openingFloat,
+    cashSales,
+    cashRefunds,
+    cashExpenses,
+    expected,
+    counted,
+    difference,
+    keptFloat,
+    comment,
+    actorId,
+    actorName,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cash_closings';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CashClosing> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('period_start')) {
+      context.handle(
+        _periodStartMeta,
+        periodStart.isAcceptableOrUnknown(
+          data['period_start']!,
+          _periodStartMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_periodStartMeta);
+    }
+    if (data.containsKey('closed_at')) {
+      context.handle(
+        _closedAtMeta,
+        closedAt.isAcceptableOrUnknown(data['closed_at']!, _closedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_closedAtMeta);
+    }
+    if (data.containsKey('opening_float')) {
+      context.handle(
+        _openingFloatMeta,
+        openingFloat.isAcceptableOrUnknown(
+          data['opening_float']!,
+          _openingFloatMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_openingFloatMeta);
+    }
+    if (data.containsKey('cash_sales')) {
+      context.handle(
+        _cashSalesMeta,
+        cashSales.isAcceptableOrUnknown(data['cash_sales']!, _cashSalesMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cashSalesMeta);
+    }
+    if (data.containsKey('cash_refunds')) {
+      context.handle(
+        _cashRefundsMeta,
+        cashRefunds.isAcceptableOrUnknown(
+          data['cash_refunds']!,
+          _cashRefundsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_cashRefundsMeta);
+    }
+    if (data.containsKey('cash_expenses')) {
+      context.handle(
+        _cashExpensesMeta,
+        cashExpenses.isAcceptableOrUnknown(
+          data['cash_expenses']!,
+          _cashExpensesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_cashExpensesMeta);
+    }
+    if (data.containsKey('expected')) {
+      context.handle(
+        _expectedMeta,
+        expected.isAcceptableOrUnknown(data['expected']!, _expectedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_expectedMeta);
+    }
+    if (data.containsKey('counted')) {
+      context.handle(
+        _countedMeta,
+        counted.isAcceptableOrUnknown(data['counted']!, _countedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_countedMeta);
+    }
+    if (data.containsKey('difference')) {
+      context.handle(
+        _differenceMeta,
+        difference.isAcceptableOrUnknown(data['difference']!, _differenceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_differenceMeta);
+    }
+    if (data.containsKey('kept_float')) {
+      context.handle(
+        _keptFloatMeta,
+        keptFloat.isAcceptableOrUnknown(data['kept_float']!, _keptFloatMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keptFloatMeta);
+    }
+    if (data.containsKey('comment')) {
+      context.handle(
+        _commentMeta,
+        comment.isAcceptableOrUnknown(data['comment']!, _commentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_commentMeta);
+    }
+    if (data.containsKey('actor_id')) {
+      context.handle(
+        _actorIdMeta,
+        actorId.isAcceptableOrUnknown(data['actor_id']!, _actorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorIdMeta);
+    }
+    if (data.containsKey('actor_name')) {
+      context.handle(
+        _actorNameMeta,
+        actorName.isAcceptableOrUnknown(data['actor_name']!, _actorNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actorNameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CashClosing map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CashClosing(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      periodStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}period_start'],
+      )!,
+      closedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}closed_at'],
+      )!,
+      openingFloat: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}opening_float'],
+      )!,
+      cashSales: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cash_sales'],
+      )!,
+      cashRefunds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cash_refunds'],
+      )!,
+      cashExpenses: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cash_expenses'],
+      )!,
+      expected: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expected'],
+      )!,
+      counted: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}counted'],
+      )!,
+      difference: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}difference'],
+      )!,
+      keptFloat: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}kept_float'],
+      )!,
+      comment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comment'],
+      )!,
+      actorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_id'],
+      )!,
+      actorName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_name'],
+      )!,
+    );
+  }
+
+  @override
+  $CashClosingsTable createAlias(String alias) {
+    return $CashClosingsTable(attachedDatabase, alias);
+  }
+}
+
+class CashClosing extends DataClass implements Insertable<CashClosing> {
+  final String id;
+  final String periodStart;
+  final String closedAt;
+  final int openingFloat;
+  final int cashSales;
+  final int cashRefunds;
+  final int cashExpenses;
+  final int expected;
+  final int counted;
+  final int difference;
+  final int keptFloat;
+  final String comment;
+  final String actorId;
+  final String actorName;
+  const CashClosing({
+    required this.id,
+    required this.periodStart,
+    required this.closedAt,
+    required this.openingFloat,
+    required this.cashSales,
+    required this.cashRefunds,
+    required this.cashExpenses,
+    required this.expected,
+    required this.counted,
+    required this.difference,
+    required this.keptFloat,
+    required this.comment,
+    required this.actorId,
+    required this.actorName,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['period_start'] = Variable<String>(periodStart);
+    map['closed_at'] = Variable<String>(closedAt);
+    map['opening_float'] = Variable<int>(openingFloat);
+    map['cash_sales'] = Variable<int>(cashSales);
+    map['cash_refunds'] = Variable<int>(cashRefunds);
+    map['cash_expenses'] = Variable<int>(cashExpenses);
+    map['expected'] = Variable<int>(expected);
+    map['counted'] = Variable<int>(counted);
+    map['difference'] = Variable<int>(difference);
+    map['kept_float'] = Variable<int>(keptFloat);
+    map['comment'] = Variable<String>(comment);
+    map['actor_id'] = Variable<String>(actorId);
+    map['actor_name'] = Variable<String>(actorName);
+    return map;
+  }
+
+  CashClosingsCompanion toCompanion(bool nullToAbsent) {
+    return CashClosingsCompanion(
+      id: Value(id),
+      periodStart: Value(periodStart),
+      closedAt: Value(closedAt),
+      openingFloat: Value(openingFloat),
+      cashSales: Value(cashSales),
+      cashRefunds: Value(cashRefunds),
+      cashExpenses: Value(cashExpenses),
+      expected: Value(expected),
+      counted: Value(counted),
+      difference: Value(difference),
+      keptFloat: Value(keptFloat),
+      comment: Value(comment),
+      actorId: Value(actorId),
+      actorName: Value(actorName),
+    );
+  }
+
+  factory CashClosing.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CashClosing(
+      id: serializer.fromJson<String>(json['id']),
+      periodStart: serializer.fromJson<String>(json['periodStart']),
+      closedAt: serializer.fromJson<String>(json['closedAt']),
+      openingFloat: serializer.fromJson<int>(json['openingFloat']),
+      cashSales: serializer.fromJson<int>(json['cashSales']),
+      cashRefunds: serializer.fromJson<int>(json['cashRefunds']),
+      cashExpenses: serializer.fromJson<int>(json['cashExpenses']),
+      expected: serializer.fromJson<int>(json['expected']),
+      counted: serializer.fromJson<int>(json['counted']),
+      difference: serializer.fromJson<int>(json['difference']),
+      keptFloat: serializer.fromJson<int>(json['keptFloat']),
+      comment: serializer.fromJson<String>(json['comment']),
+      actorId: serializer.fromJson<String>(json['actorId']),
+      actorName: serializer.fromJson<String>(json['actorName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'periodStart': serializer.toJson<String>(periodStart),
+      'closedAt': serializer.toJson<String>(closedAt),
+      'openingFloat': serializer.toJson<int>(openingFloat),
+      'cashSales': serializer.toJson<int>(cashSales),
+      'cashRefunds': serializer.toJson<int>(cashRefunds),
+      'cashExpenses': serializer.toJson<int>(cashExpenses),
+      'expected': serializer.toJson<int>(expected),
+      'counted': serializer.toJson<int>(counted),
+      'difference': serializer.toJson<int>(difference),
+      'keptFloat': serializer.toJson<int>(keptFloat),
+      'comment': serializer.toJson<String>(comment),
+      'actorId': serializer.toJson<String>(actorId),
+      'actorName': serializer.toJson<String>(actorName),
+    };
+  }
+
+  CashClosing copyWith({
+    String? id,
+    String? periodStart,
+    String? closedAt,
+    int? openingFloat,
+    int? cashSales,
+    int? cashRefunds,
+    int? cashExpenses,
+    int? expected,
+    int? counted,
+    int? difference,
+    int? keptFloat,
+    String? comment,
+    String? actorId,
+    String? actorName,
+  }) => CashClosing(
+    id: id ?? this.id,
+    periodStart: periodStart ?? this.periodStart,
+    closedAt: closedAt ?? this.closedAt,
+    openingFloat: openingFloat ?? this.openingFloat,
+    cashSales: cashSales ?? this.cashSales,
+    cashRefunds: cashRefunds ?? this.cashRefunds,
+    cashExpenses: cashExpenses ?? this.cashExpenses,
+    expected: expected ?? this.expected,
+    counted: counted ?? this.counted,
+    difference: difference ?? this.difference,
+    keptFloat: keptFloat ?? this.keptFloat,
+    comment: comment ?? this.comment,
+    actorId: actorId ?? this.actorId,
+    actorName: actorName ?? this.actorName,
+  );
+  CashClosing copyWithCompanion(CashClosingsCompanion data) {
+    return CashClosing(
+      id: data.id.present ? data.id.value : this.id,
+      periodStart: data.periodStart.present
+          ? data.periodStart.value
+          : this.periodStart,
+      closedAt: data.closedAt.present ? data.closedAt.value : this.closedAt,
+      openingFloat: data.openingFloat.present
+          ? data.openingFloat.value
+          : this.openingFloat,
+      cashSales: data.cashSales.present ? data.cashSales.value : this.cashSales,
+      cashRefunds: data.cashRefunds.present
+          ? data.cashRefunds.value
+          : this.cashRefunds,
+      cashExpenses: data.cashExpenses.present
+          ? data.cashExpenses.value
+          : this.cashExpenses,
+      expected: data.expected.present ? data.expected.value : this.expected,
+      counted: data.counted.present ? data.counted.value : this.counted,
+      difference: data.difference.present
+          ? data.difference.value
+          : this.difference,
+      keptFloat: data.keptFloat.present ? data.keptFloat.value : this.keptFloat,
+      comment: data.comment.present ? data.comment.value : this.comment,
+      actorId: data.actorId.present ? data.actorId.value : this.actorId,
+      actorName: data.actorName.present ? data.actorName.value : this.actorName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashClosing(')
+          ..write('id: $id, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('openingFloat: $openingFloat, ')
+          ..write('cashSales: $cashSales, ')
+          ..write('cashRefunds: $cashRefunds, ')
+          ..write('cashExpenses: $cashExpenses, ')
+          ..write('expected: $expected, ')
+          ..write('counted: $counted, ')
+          ..write('difference: $difference, ')
+          ..write('keptFloat: $keptFloat, ')
+          ..write('comment: $comment, ')
+          ..write('actorId: $actorId, ')
+          ..write('actorName: $actorName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    periodStart,
+    closedAt,
+    openingFloat,
+    cashSales,
+    cashRefunds,
+    cashExpenses,
+    expected,
+    counted,
+    difference,
+    keptFloat,
+    comment,
+    actorId,
+    actorName,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CashClosing &&
+          other.id == this.id &&
+          other.periodStart == this.periodStart &&
+          other.closedAt == this.closedAt &&
+          other.openingFloat == this.openingFloat &&
+          other.cashSales == this.cashSales &&
+          other.cashRefunds == this.cashRefunds &&
+          other.cashExpenses == this.cashExpenses &&
+          other.expected == this.expected &&
+          other.counted == this.counted &&
+          other.difference == this.difference &&
+          other.keptFloat == this.keptFloat &&
+          other.comment == this.comment &&
+          other.actorId == this.actorId &&
+          other.actorName == this.actorName);
+}
+
+class CashClosingsCompanion extends UpdateCompanion<CashClosing> {
+  final Value<String> id;
+  final Value<String> periodStart;
+  final Value<String> closedAt;
+  final Value<int> openingFloat;
+  final Value<int> cashSales;
+  final Value<int> cashRefunds;
+  final Value<int> cashExpenses;
+  final Value<int> expected;
+  final Value<int> counted;
+  final Value<int> difference;
+  final Value<int> keptFloat;
+  final Value<String> comment;
+  final Value<String> actorId;
+  final Value<String> actorName;
+  final Value<int> rowid;
+  const CashClosingsCompanion({
+    this.id = const Value.absent(),
+    this.periodStart = const Value.absent(),
+    this.closedAt = const Value.absent(),
+    this.openingFloat = const Value.absent(),
+    this.cashSales = const Value.absent(),
+    this.cashRefunds = const Value.absent(),
+    this.cashExpenses = const Value.absent(),
+    this.expected = const Value.absent(),
+    this.counted = const Value.absent(),
+    this.difference = const Value.absent(),
+    this.keptFloat = const Value.absent(),
+    this.comment = const Value.absent(),
+    this.actorId = const Value.absent(),
+    this.actorName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CashClosingsCompanion.insert({
+    required String id,
+    required String periodStart,
+    required String closedAt,
+    required int openingFloat,
+    required int cashSales,
+    required int cashRefunds,
+    required int cashExpenses,
+    required int expected,
+    required int counted,
+    required int difference,
+    required int keptFloat,
+    required String comment,
+    required String actorId,
+    required String actorName,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       periodStart = Value(periodStart),
+       closedAt = Value(closedAt),
+       openingFloat = Value(openingFloat),
+       cashSales = Value(cashSales),
+       cashRefunds = Value(cashRefunds),
+       cashExpenses = Value(cashExpenses),
+       expected = Value(expected),
+       counted = Value(counted),
+       difference = Value(difference),
+       keptFloat = Value(keptFloat),
+       comment = Value(comment),
+       actorId = Value(actorId),
+       actorName = Value(actorName);
+  static Insertable<CashClosing> custom({
+    Expression<String>? id,
+    Expression<String>? periodStart,
+    Expression<String>? closedAt,
+    Expression<int>? openingFloat,
+    Expression<int>? cashSales,
+    Expression<int>? cashRefunds,
+    Expression<int>? cashExpenses,
+    Expression<int>? expected,
+    Expression<int>? counted,
+    Expression<int>? difference,
+    Expression<int>? keptFloat,
+    Expression<String>? comment,
+    Expression<String>? actorId,
+    Expression<String>? actorName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (periodStart != null) 'period_start': periodStart,
+      if (closedAt != null) 'closed_at': closedAt,
+      if (openingFloat != null) 'opening_float': openingFloat,
+      if (cashSales != null) 'cash_sales': cashSales,
+      if (cashRefunds != null) 'cash_refunds': cashRefunds,
+      if (cashExpenses != null) 'cash_expenses': cashExpenses,
+      if (expected != null) 'expected': expected,
+      if (counted != null) 'counted': counted,
+      if (difference != null) 'difference': difference,
+      if (keptFloat != null) 'kept_float': keptFloat,
+      if (comment != null) 'comment': comment,
+      if (actorId != null) 'actor_id': actorId,
+      if (actorName != null) 'actor_name': actorName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CashClosingsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? periodStart,
+    Value<String>? closedAt,
+    Value<int>? openingFloat,
+    Value<int>? cashSales,
+    Value<int>? cashRefunds,
+    Value<int>? cashExpenses,
+    Value<int>? expected,
+    Value<int>? counted,
+    Value<int>? difference,
+    Value<int>? keptFloat,
+    Value<String>? comment,
+    Value<String>? actorId,
+    Value<String>? actorName,
+    Value<int>? rowid,
+  }) {
+    return CashClosingsCompanion(
+      id: id ?? this.id,
+      periodStart: periodStart ?? this.periodStart,
+      closedAt: closedAt ?? this.closedAt,
+      openingFloat: openingFloat ?? this.openingFloat,
+      cashSales: cashSales ?? this.cashSales,
+      cashRefunds: cashRefunds ?? this.cashRefunds,
+      cashExpenses: cashExpenses ?? this.cashExpenses,
+      expected: expected ?? this.expected,
+      counted: counted ?? this.counted,
+      difference: difference ?? this.difference,
+      keptFloat: keptFloat ?? this.keptFloat,
+      comment: comment ?? this.comment,
+      actorId: actorId ?? this.actorId,
+      actorName: actorName ?? this.actorName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (periodStart.present) {
+      map['period_start'] = Variable<String>(periodStart.value);
+    }
+    if (closedAt.present) {
+      map['closed_at'] = Variable<String>(closedAt.value);
+    }
+    if (openingFloat.present) {
+      map['opening_float'] = Variable<int>(openingFloat.value);
+    }
+    if (cashSales.present) {
+      map['cash_sales'] = Variable<int>(cashSales.value);
+    }
+    if (cashRefunds.present) {
+      map['cash_refunds'] = Variable<int>(cashRefunds.value);
+    }
+    if (cashExpenses.present) {
+      map['cash_expenses'] = Variable<int>(cashExpenses.value);
+    }
+    if (expected.present) {
+      map['expected'] = Variable<int>(expected.value);
+    }
+    if (counted.present) {
+      map['counted'] = Variable<int>(counted.value);
+    }
+    if (difference.present) {
+      map['difference'] = Variable<int>(difference.value);
+    }
+    if (keptFloat.present) {
+      map['kept_float'] = Variable<int>(keptFloat.value);
+    }
+    if (comment.present) {
+      map['comment'] = Variable<String>(comment.value);
+    }
+    if (actorId.present) {
+      map['actor_id'] = Variable<String>(actorId.value);
+    }
+    if (actorName.present) {
+      map['actor_name'] = Variable<String>(actorName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CashClosingsCompanion(')
+          ..write('id: $id, ')
+          ..write('periodStart: $periodStart, ')
+          ..write('closedAt: $closedAt, ')
+          ..write('openingFloat: $openingFloat, ')
+          ..write('cashSales: $cashSales, ')
+          ..write('cashRefunds: $cashRefunds, ')
+          ..write('cashExpenses: $cashExpenses, ')
+          ..write('expected: $expected, ')
+          ..write('counted: $counted, ')
+          ..write('difference: $difference, ')
+          ..write('keptFloat: $keptFloat, ')
+          ..write('comment: $comment, ')
+          ..write('actorId: $actorId, ')
+          ..write('actorName: $actorName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$PosDatabase extends GeneratedDatabase {
   _$PosDatabase(QueryExecutor e) : super(e);
   $PosDatabaseManager get managers => $PosDatabaseManager(this);
@@ -5505,6 +7104,8 @@ abstract class _$PosDatabase extends GeneratedDatabase {
   late final $SaleReturnLinesTable saleReturnLines = $SaleReturnLinesTable(
     this,
   );
+  late final $ExpensesTable expenses = $ExpensesTable(this);
+  late final $CashClosingsTable cashClosings = $CashClosingsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5522,6 +7123,8 @@ abstract class _$PosDatabase extends GeneratedDatabase {
     shopSettings,
     saleReturns,
     saleReturnLines,
+    expenses,
+    cashClosings,
   ];
 }
 
@@ -9664,6 +11267,761 @@ typedef $$SaleReturnLinesTableProcessedTableManager =
       SaleReturnLine,
       PrefetchHooks Function({bool returnId})
     >;
+typedef $$ExpensesTableCreateCompanionBuilder = ExpensesCompanion Function({
+  required String id,
+  required String kind,
+  required String category,
+  required int amount,
+  required String paymentMode,
+  required String reason,
+  required String occurredAt,
+  required String actorId,
+  required String actorName,
+  required String recordedAt,
+  Value<String?> cancelledAt,
+  Value<String?> cancelReason,
+  Value<String?> cancelledBy,
+  Value<int> rowid,
+});
+typedef $$ExpensesTableUpdateCompanionBuilder = ExpensesCompanion Function({
+  Value<String> id,
+  Value<String> kind,
+  Value<String> category,
+  Value<int> amount,
+  Value<String> paymentMode,
+  Value<String> reason,
+  Value<String> occurredAt,
+  Value<String> actorId,
+  Value<String> actorName,
+  Value<String> recordedAt,
+  Value<String?> cancelledAt,
+  Value<String?> cancelReason,
+  Value<String?> cancelledBy,
+  Value<int> rowid,
+});
+
+class $$ExpensesTableFilterComposer
+    extends Composer<_$PosDatabase, $ExpensesTable> {
+  $$ExpensesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get paymentMode => $composableBuilder(
+    column: $table.paymentMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorId => $composableBuilder(
+    column: $table.actorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorName => $composableBuilder(
+    column: $table.actorName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cancelledAt => $composableBuilder(
+    column: $table.cancelledAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cancelReason => $composableBuilder(
+    column: $table.cancelReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cancelledBy => $composableBuilder(
+    column: $table.cancelledBy,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ExpensesTableOrderingComposer
+    extends Composer<_$PosDatabase, $ExpensesTable> {
+  $$ExpensesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get paymentMode => $composableBuilder(
+    column: $table.paymentMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorId => $composableBuilder(
+    column: $table.actorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorName => $composableBuilder(
+    column: $table.actorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cancelledAt => $composableBuilder(
+    column: $table.cancelledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cancelReason => $composableBuilder(
+    column: $table.cancelReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cancelledBy => $composableBuilder(
+    column: $table.cancelledBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ExpensesTableAnnotationComposer
+    extends Composer<_$PosDatabase, $ExpensesTable> {
+  $$ExpensesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get paymentMode => $composableBuilder(
+    column: $table.paymentMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get actorId =>
+      $composableBuilder(column: $table.actorId, builder: (column) => column);
+
+  GeneratedColumn<String> get actorName =>
+      $composableBuilder(column: $table.actorName, builder: (column) => column);
+
+  GeneratedColumn<String> get recordedAt => $composableBuilder(
+    column: $table.recordedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cancelledAt => $composableBuilder(
+    column: $table.cancelledAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cancelReason => $composableBuilder(
+    column: $table.cancelReason,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cancelledBy => $composableBuilder(
+    column: $table.cancelledBy,
+    builder: (column) => column,
+  );
+}
+
+class $$ExpensesTableTableManager
+    extends
+        RootTableManager<
+          _$PosDatabase,
+          $ExpensesTable,
+          Expense,
+          $$ExpensesTableFilterComposer,
+          $$ExpensesTableOrderingComposer,
+          $$ExpensesTableAnnotationComposer,
+          $$ExpensesTableCreateCompanionBuilder,
+          $$ExpensesTableUpdateCompanionBuilder,
+          (Expense, BaseReferences<_$PosDatabase, $ExpensesTable, Expense>),
+          Expense,
+          PrefetchHooks Function()
+        > {
+  $$ExpensesTableTableManager(_$PosDatabase db, $ExpensesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExpensesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExpensesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExpensesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<String> paymentMode = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String> occurredAt = const Value.absent(),
+                Value<String> actorId = const Value.absent(),
+                Value<String> actorName = const Value.absent(),
+                Value<String> recordedAt = const Value.absent(),
+                Value<String?> cancelledAt = const Value.absent(),
+                Value<String?> cancelReason = const Value.absent(),
+                Value<String?> cancelledBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExpensesCompanion(
+                id: id,
+                kind: kind,
+                category: category,
+                amount: amount,
+                paymentMode: paymentMode,
+                reason: reason,
+                occurredAt: occurredAt,
+                actorId: actorId,
+                actorName: actorName,
+                recordedAt: recordedAt,
+                cancelledAt: cancelledAt,
+                cancelReason: cancelReason,
+                cancelledBy: cancelledBy,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                required String category,
+                required int amount,
+                required String paymentMode,
+                required String reason,
+                required String occurredAt,
+                required String actorId,
+                required String actorName,
+                required String recordedAt,
+                Value<String?> cancelledAt = const Value.absent(),
+                Value<String?> cancelReason = const Value.absent(),
+                Value<String?> cancelledBy = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExpensesCompanion.insert(
+                id: id,
+                kind: kind,
+                category: category,
+                amount: amount,
+                paymentMode: paymentMode,
+                reason: reason,
+                occurredAt: occurredAt,
+                actorId: actorId,
+                actorName: actorName,
+                recordedAt: recordedAt,
+                cancelledAt: cancelledAt,
+                cancelReason: cancelReason,
+                cancelledBy: cancelledBy,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ExpensesTable, Expense>(table),
+                  BaseReferences<_$PosDatabase, $ExpensesTable, Expense>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ExpensesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$PosDatabase,
+      $ExpensesTable,
+      Expense,
+      $$ExpensesTableFilterComposer,
+      $$ExpensesTableOrderingComposer,
+      $$ExpensesTableAnnotationComposer,
+      $$ExpensesTableCreateCompanionBuilder,
+      $$ExpensesTableUpdateCompanionBuilder,
+      (Expense, BaseReferences<_$PosDatabase, $ExpensesTable, Expense>),
+      Expense,
+      PrefetchHooks Function()
+    >;
+typedef $$CashClosingsTableCreateCompanionBuilder =
+    CashClosingsCompanion Function({
+      required String id,
+      required String periodStart,
+      required String closedAt,
+      required int openingFloat,
+      required int cashSales,
+      required int cashRefunds,
+      required int cashExpenses,
+      required int expected,
+      required int counted,
+      required int difference,
+      required int keptFloat,
+      required String comment,
+      required String actorId,
+      required String actorName,
+      Value<int> rowid,
+    });
+typedef $$CashClosingsTableUpdateCompanionBuilder =
+    CashClosingsCompanion Function({
+      Value<String> id,
+      Value<String> periodStart,
+      Value<String> closedAt,
+      Value<int> openingFloat,
+      Value<int> cashSales,
+      Value<int> cashRefunds,
+      Value<int> cashExpenses,
+      Value<int> expected,
+      Value<int> counted,
+      Value<int> difference,
+      Value<int> keptFloat,
+      Value<String> comment,
+      Value<String> actorId,
+      Value<String> actorName,
+      Value<int> rowid,
+    });
+
+class $$CashClosingsTableFilterComposer
+    extends Composer<_$PosDatabase, $CashClosingsTable> {
+  $$CashClosingsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get openingFloat => $composableBuilder(
+    column: $table.openingFloat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cashSales => $composableBuilder(
+    column: $table.cashSales,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cashRefunds => $composableBuilder(
+    column: $table.cashRefunds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cashExpenses => $composableBuilder(
+    column: $table.cashExpenses,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expected => $composableBuilder(
+    column: $table.expected,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get counted => $composableBuilder(
+    column: $table.counted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get difference => $composableBuilder(
+    column: $table.difference,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get keptFloat => $composableBuilder(
+    column: $table.keptFloat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorId => $composableBuilder(
+    column: $table.actorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorName => $composableBuilder(
+    column: $table.actorName,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$CashClosingsTableOrderingComposer
+    extends Composer<_$PosDatabase, $CashClosingsTable> {
+  $$CashClosingsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get closedAt => $composableBuilder(
+    column: $table.closedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get openingFloat => $composableBuilder(
+    column: $table.openingFloat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cashSales => $composableBuilder(
+    column: $table.cashSales,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cashRefunds => $composableBuilder(
+    column: $table.cashRefunds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cashExpenses => $composableBuilder(
+    column: $table.cashExpenses,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expected => $composableBuilder(
+    column: $table.expected,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get counted => $composableBuilder(
+    column: $table.counted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get difference => $composableBuilder(
+    column: $table.difference,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get keptFloat => $composableBuilder(
+    column: $table.keptFloat,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorId => $composableBuilder(
+    column: $table.actorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorName => $composableBuilder(
+    column: $table.actorName,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CashClosingsTableAnnotationComposer
+    extends Composer<_$PosDatabase, $CashClosingsTable> {
+  $$CashClosingsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get periodStart => $composableBuilder(
+    column: $table.periodStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get closedAt =>
+      $composableBuilder(column: $table.closedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get openingFloat => $composableBuilder(
+    column: $table.openingFloat,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cashSales =>
+      $composableBuilder(column: $table.cashSales, builder: (column) => column);
+
+  GeneratedColumn<int> get cashRefunds => $composableBuilder(
+    column: $table.cashRefunds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cashExpenses => $composableBuilder(
+    column: $table.cashExpenses,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expected =>
+      $composableBuilder(column: $table.expected, builder: (column) => column);
+
+  GeneratedColumn<int> get counted =>
+      $composableBuilder(column: $table.counted, builder: (column) => column);
+
+  GeneratedColumn<int> get difference => $composableBuilder(
+    column: $table.difference,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get keptFloat =>
+      $composableBuilder(column: $table.keptFloat, builder: (column) => column);
+
+  GeneratedColumn<String> get comment =>
+      $composableBuilder(column: $table.comment, builder: (column) => column);
+
+  GeneratedColumn<String> get actorId =>
+      $composableBuilder(column: $table.actorId, builder: (column) => column);
+
+  GeneratedColumn<String> get actorName =>
+      $composableBuilder(column: $table.actorName, builder: (column) => column);
+}
+
+class $$CashClosingsTableTableManager
+    extends
+        RootTableManager<
+          _$PosDatabase,
+          $CashClosingsTable,
+          CashClosing,
+          $$CashClosingsTableFilterComposer,
+          $$CashClosingsTableOrderingComposer,
+          $$CashClosingsTableAnnotationComposer,
+          $$CashClosingsTableCreateCompanionBuilder,
+          $$CashClosingsTableUpdateCompanionBuilder,
+          (
+            CashClosing,
+            BaseReferences<_$PosDatabase, $CashClosingsTable, CashClosing>,
+          ),
+          CashClosing,
+          PrefetchHooks Function()
+        > {
+  $$CashClosingsTableTableManager(_$PosDatabase db, $CashClosingsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CashClosingsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CashClosingsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CashClosingsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> periodStart = const Value.absent(),
+                Value<String> closedAt = const Value.absent(),
+                Value<int> openingFloat = const Value.absent(),
+                Value<int> cashSales = const Value.absent(),
+                Value<int> cashRefunds = const Value.absent(),
+                Value<int> cashExpenses = const Value.absent(),
+                Value<int> expected = const Value.absent(),
+                Value<int> counted = const Value.absent(),
+                Value<int> difference = const Value.absent(),
+                Value<int> keptFloat = const Value.absent(),
+                Value<String> comment = const Value.absent(),
+                Value<String> actorId = const Value.absent(),
+                Value<String> actorName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CashClosingsCompanion(
+                id: id,
+                periodStart: periodStart,
+                closedAt: closedAt,
+                openingFloat: openingFloat,
+                cashSales: cashSales,
+                cashRefunds: cashRefunds,
+                cashExpenses: cashExpenses,
+                expected: expected,
+                counted: counted,
+                difference: difference,
+                keptFloat: keptFloat,
+                comment: comment,
+                actorId: actorId,
+                actorName: actorName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String periodStart,
+                required String closedAt,
+                required int openingFloat,
+                required int cashSales,
+                required int cashRefunds,
+                required int cashExpenses,
+                required int expected,
+                required int counted,
+                required int difference,
+                required int keptFloat,
+                required String comment,
+                required String actorId,
+                required String actorName,
+                Value<int> rowid = const Value.absent(),
+              }) => CashClosingsCompanion.insert(
+                id: id,
+                periodStart: periodStart,
+                closedAt: closedAt,
+                openingFloat: openingFloat,
+                cashSales: cashSales,
+                cashRefunds: cashRefunds,
+                cashExpenses: cashExpenses,
+                expected: expected,
+                counted: counted,
+                difference: difference,
+                keptFloat: keptFloat,
+                comment: comment,
+                actorId: actorId,
+                actorName: actorName,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$CashClosingsTable, CashClosing>(table),
+                  BaseReferences<
+                    _$PosDatabase,
+                    $CashClosingsTable,
+                    CashClosing
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CashClosingsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$PosDatabase,
+      $CashClosingsTable,
+      CashClosing,
+      $$CashClosingsTableFilterComposer,
+      $$CashClosingsTableOrderingComposer,
+      $$CashClosingsTableAnnotationComposer,
+      $$CashClosingsTableCreateCompanionBuilder,
+      $$CashClosingsTableUpdateCompanionBuilder,
+      (
+        CashClosing,
+        BaseReferences<_$PosDatabase, $CashClosingsTable, CashClosing>,
+      ),
+      CashClosing,
+      PrefetchHooks Function()
+    >;
 
 class $PosDatabaseManager {
   final _$PosDatabase _db;
@@ -9692,4 +12050,8 @@ class $PosDatabaseManager {
       $$SaleReturnsTableTableManager(_db, _db.saleReturns);
   $$SaleReturnLinesTableTableManager get saleReturnLines =>
       $$SaleReturnLinesTableTableManager(_db, _db.saleReturnLines);
+  $$ExpensesTableTableManager get expenses =>
+      $$ExpensesTableTableManager(_db, _db.expenses);
+  $$CashClosingsTableTableManager get cashClosings =>
+      $$CashClosingsTableTableManager(_db, _db.cashClosings);
 }

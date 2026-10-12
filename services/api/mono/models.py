@@ -152,3 +152,45 @@ class SaleReturnLine(Base):
     unit_price: Mapped[int] = mapped_column(BigInteger)
     line_total: Mapped[int] = mapped_column(BigInteger)
     resaleable: Mapped[bool] = mapped_column(Boolean)
+
+
+class Expense(Base):
+    """Shop expense; cancelled with a traced reason, never edited."""
+
+    __tablename__ = "expenses"
+    __table_args__ = (
+        CheckConstraint("kind IN ('CHARGE','STOCK','TREASURY')", name="valid_expense_kind"),
+        CheckConstraint("amount > 0", name="positive_expense"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    category: Mapped[str] = mapped_column(String(60))
+    amount: Mapped[int] = mapped_column(BigInteger)
+    payment_mode: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(200))
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    actor_id: Mapped[str] = mapped_column(ForeignKey("actors.id"))
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancel_reason: Mapped[str | None] = mapped_column(String(200))
+
+
+class CashClosing(Base):
+    __tablename__ = "cash_closings"
+    __table_args__ = (
+        CheckConstraint("counted >= 0", name="nonnegative_counted"),
+        CheckConstraint("kept_float >= 0 AND kept_float <= counted", name="valid_kept_float"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    opening_float: Mapped[int] = mapped_column(BigInteger)
+    cash_sales: Mapped[int] = mapped_column(BigInteger)
+    cash_refunds: Mapped[int] = mapped_column(BigInteger)
+    cash_expenses: Mapped[int] = mapped_column(BigInteger)
+    expected: Mapped[int] = mapped_column(BigInteger)
+    counted: Mapped[int] = mapped_column(BigInteger)
+    difference: Mapped[int] = mapped_column(BigInteger)
+    kept_float: Mapped[int] = mapped_column(BigInteger)
+    comment: Mapped[str] = mapped_column(String(200))
+    actor_id: Mapped[str] = mapped_column(ForeignKey("actors.id"))

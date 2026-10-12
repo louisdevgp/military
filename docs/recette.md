@@ -160,6 +160,16 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Constat sur le H10 (capture) : écran d'erreur Flutter `_dependents.isEmpty` après **Utilisateurs → Nouveau code PIN**. Reproduit par un test d'écran : champs de la fenêtre libérés pendant sa fermeture (« TextEditingController used after being disposed »). Correction : libération après la fin de l'animation, comme pour les autres fenêtres ; inventaire fait, plus aucune fenêtre concernée.
 - Flutter : **52 tests réussis** (dont `users_screen_test.dart`). APK 0.10.1+16 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.10.1-debug.apk`, SHA-256 `E7520A690FBB023DBE183F0FD8CEA3592A864B85655D28CDDC7DCCCF0B7913E1`.
 
+## Incrément 0.11.0+17 — dépenses, clôture de caisse, rapports et CSV (lot 3)
+
+- **Dépenses** (Administration, admin) : type (charge / achat de stock / mouvement de trésorerie, pour ne jamais déduire deux fois le même argent), catégorie avec suggestions, montant, date (passée ou du jour), motif, mode de règlement ; jamais modifiées, annulation tracée avec motif.
+- **Clôture de caisse** : espèces attendues = fond de caisse + ventes en espèces (mode effectif après correction) − remboursements en espèces − dépenses réglées en espèces depuis la clôture précédente (bornes strictes : une opération à l'instant d'une clôture appartient à la période close — défaut trouvé et corrigé par les tests) ; montant compté, écart (commentaire obligatoire), fond conservé ≤ compté ; fond initial saisi à la première clôture.
+- **Rapports** jour / semaine ISO / mois / année / période libre, Africa/Abidjan (UTC+0, bornes [début, fin)) : ventes brutes, remboursements, nettes, quantités, paiements (modes effectifs), remboursements par mode, catégories, variantes, dépenses par type et catégorie, clôtures et écart cumulé, stock et alertes. Pas de « bénéfice » : marge déclarée non calculable (pas de prix d'achat).
+- **Export CSV** (synthèse, lignes de vente, dépenses) via le sélecteur de documents Android (aucune permission) ; « ; », UTF-8 avec BOM, formules neutralisées.
+- SQLite v8, Alembic 0007 (RLS). Événements `expense.recorded`, `expense.cancelled`, `cash.closed` (cohérence arithmétique contrôlée). Point privé `/api/private/reports/summary` ; **concordance testée** : le rapport du jour calculé par le terminal (contrat, 17 événements) est identique au rapport du serveur après rejeu.
+- Flutter : analyse sans anomalie, **57 tests réussis** (finances, CSV, parcours écran dépense → clôture → rapport sur 360 dp). API : **27 réussis sur PostgreSQL 18.6**, 26 + 1 ignoré sur SQLite ; base de contrôle en `0007 (head)`.
+- Limites : dépenses et clôtures réservées à l'administrateur ; caisse attendue calculée sur le terminal (le serveur vérifie la cohérence, pas les montants) ; enregistrement CSV non encore essayé sur l'appareil.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

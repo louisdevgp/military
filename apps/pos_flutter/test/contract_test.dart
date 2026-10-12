@@ -5,7 +5,9 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mono_pos/auth/pin.dart';
 import 'package:mono_pos/data/database.dart';
+import 'package:mono_pos/data/finance_repository.dart';
 import 'package:mono_pos/data/pos_repository.dart';
+import 'package:mono_pos/domain/finance.dart';
 import 'package:mono_pos/data/settings_repository.dart';
 import 'package:mono_pos/printing/receipt.dart';
 import 'package:mono_pos/data/user_repository.dart';
@@ -87,6 +89,33 @@ void main() {
     );
     await repo.countInventory(actor, {id: 4});
     await repo.updateVariant(actor, id, threshold: 2);
+    final finance = FinanceRepository(repo);
+    await finance.recordExpense(
+      actor,
+      kind: ExpenseKind.charge,
+      category: 'Transport TEST',
+      amount: 2000,
+      mode: PaymentMode.cash,
+      reason: 'Livraison TEST',
+    );
+    final mistake = await finance.recordExpense(
+      actor,
+      kind: ExpenseKind.stock,
+      category: 'Fournisseur TEST',
+      amount: 9000,
+      mode: PaymentMode.transfer,
+      reason: 'Saisie en double',
+    );
+    await finance.cancelExpense(actor, mistake, 'Doublon TEST');
+    await finance.closeCash(
+      actor,
+      counted: 10000,
+      keptFloat: 5000,
+      comment: 'Écart TEST',
+      openingFloat: 0,
+    );
+    final day = ReportPeriod.day(DateTime.utc(2026, 10, 6));
+    final report = await finance.report(day);
     await SettingsRepository(repo).saveReceiptSettings(
       actor,
       const ReceiptSettings(contacts: '0700000000', logo: LogoChoice.none),
@@ -111,9 +140,24 @@ void main() {
         'actors': 2,
         'variants': 3,
         'refunded': 12500,
+        // Terminal report for the day; the server must find the same figures.
+        'report': {
+          'start': day.startIso,
+          'end': day.endIso,
+          'sale_count': report.saleCount,
+          'gross': report.gross,
+          'refunds': report.refunds,
+          'net': report.net,
+          'payments': report.payments,
+          'expenses_by_kind': {
+            for (final e in report.expensesByKind.entries) e.key.code: e.value,
+          },
+          'closings': report.closings,
+          'closing_gap': report.closingGap,
+        },
       },
     };
-    expect(fixture['events'], hasLength(13));
+    expect(fixture['events'], hasLength(17));
     if (const bool.fromEnvironment('EXPORT_CONTRACT')) {
       final file = File('../../contracts/vertical_v1.json');
       await file.parent.create(recursive: true);

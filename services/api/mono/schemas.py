@@ -115,6 +115,50 @@ class SaleReturned(StrictModel):
     reason: Annotated[str, Field(min_length=3, max_length=200)]
 
 
+class ExpenseRecorded(StrictModel):
+    kind: Literal["CHARGE", "STOCK", "TREASURY"]
+    category: Annotated[str, Field(min_length=1, max_length=60)]
+    amount: Annotated[StrictInt, Field(ge=1, le=1_000_000_000_000)]
+    payment_mode: PaymentMode
+    reason: Annotated[str, Field(min_length=3, max_length=200)]
+    occurred_at: AwareDatetime
+
+
+class ExpenseCancelled(StrictModel):
+    expense_id: UUID
+    reason: Annotated[str, Field(min_length=3, max_length=200)]
+
+
+SignedMoney = Annotated[StrictInt, Field(ge=-1_000_000_000_000, le=1_000_000_000_000)]
+
+
+class CashClosed(StrictModel):
+    period_start: AwareDatetime
+    opening_float: Money
+    cash_sales: Money
+    cash_refunds: Money
+    cash_expenses: Money
+    expected: SignedMoney
+    counted: Money
+    difference: SignedMoney
+    kept_float: Money
+    comment: Annotated[str, Field(max_length=200)]
+
+
+class ReportSummary(StrictModel):
+    """Figures computed by the server for [start, end), to compare with the
+    terminal's report after synchronisation."""
+
+    sale_count: int
+    gross: int
+    refunds: int
+    net: int
+    payments: dict[str, int]
+    expenses_by_kind: dict[str, int]
+    closings: int
+    closing_gap: int
+
+
 class Customer(StrictModel):
     name: OptionalText = ""
     first_name: OptionalText = ""
@@ -166,6 +210,9 @@ class Envelope(StrictModel):
         "stock.moved",
         "variant.updated",
         "sale.returned",
+        "expense.recorded",
+        "expense.cancelled",
+        "cash.closed",
     ]
     occurred_at: AwareDatetime
     actor_id: Label

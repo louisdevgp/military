@@ -14,6 +14,12 @@ L’écran affiche en permanence « Recette · <utilisateur> · <imprimante> ».
 - Les boutons **Montant exact** et billets ronds évitent la saisie. Si la monnaie à rendre atteint le total ou 50 000 FCFA, l’application demande de vérifier la somme avant de valider.
 - Après la vente, seul un administrateur peut **corriger le paiement** depuis l’historique (icône crayon) : mode de paiement ou somme réellement remise, avec un motif obligatoire. La vente d’origine reste dans l’historique ; le duplicata affiche le paiement corrigé et la mention « Paiement corrigé le … ». Le total et les articles ne se corrigent pas ainsi : une annulation ou un retour sera une opération distincte.
 
+## Dépenses, clôture de caisse, rapports
+
+- **Administration → Dépenses** : bouton **Dépense** ; choisir le type (**Charge** : loyer, transport… ; **Achat de stock** ; **Mouvement de trésorerie** : retrait, dépôt en banque), la catégorie, le montant, le motif, le mode de règlement et la date. Une erreur se corrige avec **Annuler la dépense** (motif obligatoire) ; la dépense reste visible, barrée.
+- **Administration → Clôture de caisse** (fin de journée) : l'écran calcule les espèces attendues. Saisir les espèces comptées ; en cas d'écart, un commentaire est obligatoire. Indiquer le fond de caisse conservé pour le lendemain. À la toute première clôture, saisir le fond de caisse de départ.
+- **Administration → Rapports** : Jour, Semaine, Mois, Année ou Période ; flèches pour changer de période. Ventes brutes, retours, ventes nettes, paiements, catégories, variantes, dépenses, caisse, stock et alertes. L'icône de téléchargement exporte la synthèse, les lignes de vente ou les dépenses en CSV (ouvrable dans Excel) à l'endroit choisi.
+
 ## Retour, remboursement, annulation
 
 Administrateur : **Historique** → menu ⋮ de la vente → **Retour ou annulation**. Indiquer la quantité rendue par article (+/−), choisir **Revendable** (remis en stock) ou **Endommagé** (pas remis en vente), le mode de remboursement et le motif, puis **Rembourser**. **Annuler la vente** rembourse tout ce qui n'a pas encore été rendu. Un ticket de remboursement s'imprime. On ne peut jamais rendre plus que la quantité vendue ni annuler deux fois ; la vente reste dans l'historique avec la mention du retour.

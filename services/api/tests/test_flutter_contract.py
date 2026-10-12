@@ -43,3 +43,13 @@ def test_actual_flutter_outbox_matches_server(system):
         assert session.scalar(select(func.count()).select_from(Actor)) == expected["actors"]
         assert session.scalar(select(SaleCorrection.tendered)) == 25000
         assert session.scalar(select(func.sum(SaleReturn.refund_total))) == expected["refunded"]
+    report = expected["report"]
+    with TestClient(create_app(settings, engine)) as client:
+        client.headers["Authorization"] = f"Bearer {settings.sync_token.get_secret_value()}"
+        served = client.get(
+            "/api/private/reports/summary",
+            params={"start": report["start"], "end": report["end"]},
+        )
+    assert served.status_code == 200, served.text
+    figures = {k: v for k, v in report.items() if k not in ("start", "end")}
+    assert served.json() == figures, "rapport serveur différent du rapport du terminal"

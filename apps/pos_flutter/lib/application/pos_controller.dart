@@ -5,9 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../data/finance_repository.dart';
 import '../data/pos_repository.dart';
 import '../data/settings_repository.dart';
+import '../domain/finance.dart';
 import '../domain/models.dart';
+import '../media/export_service.dart';
 import '../media/photo_service.dart';
 import '../printing/printer_service.dart';
 import '../sync/secure_store.dart';
@@ -18,6 +21,12 @@ final repositoryProvider = Provider<PosRepository>(
   (ref) => throw StateError('Base non initialisée'),
 );
 final printerProvider = Provider<PrinterService>((ref) => SimulatedPrinter());
+final exportProvider = Provider<ExportService>(
+  (ref) => const AndroidExportService(),
+);
+final financeRepositoryProvider = Provider<FinanceRepository>(
+  (ref) => FinanceRepository(ref.read(repositoryProvider)),
+);
 final settingsRepositoryProvider = Provider<SettingsRepository>(
   (ref) => SettingsRepository(ref.read(repositoryProvider)),
 );
@@ -396,6 +405,84 @@ class PosController extends Notifier<PosState> {
             'Impression non confirmée${_code(e)}. La vente et le stock sont conservés.',
       );
     }
+  }
+
+  FinanceRepository get _finance => ref.read(financeRepositoryProvider);
+
+  Future<bool> recordExpense({
+    required ExpenseKind kind,
+    required String category,
+    required String amount,
+    required PaymentMode mode,
+    required String reason,
+    DateTime? occurredAt,
+  }) => _run(() async {
+    await _finance.recordExpense(
+      actor,
+      kind: kind,
+      category: category,
+      amount: moneyInput(amount),
+      mode: mode,
+      reason: reason,
+      occurredAt: occurredAt,
+    );
+    return 'Dépense enregistrée.';
+  });
+
+  Future<bool> cancelExpense(String id, String reason) => _run(() async {
+    await _finance.cancelExpense(actor, id, reason);
+    return 'Dépense annulée (trace conservée).';
+  });
+
+  /// CSV export of a period: 'sales', 'expenses' or 'summary'.
+  Future<void> exportCsv(String kind, ReportPeriod period) async {
+    if (state.busy) return;
+    state = state.copy(busy: true);
+    String message;
+    try {
+      actor.requireAdmin();
+      final content = switch (kind) {
+        'sales' => await _finance.salesCsv(period),
+        'expenses' => await _finance.expensesCsv(period),
+        _ => await _finance.summaryCsv(period),
+      };
+      final stamp = period.start.toIso8601String().substring(0, 10);
+      final saved = await ref
+          .read(exportProvider)
+          .saveCsv('mono-$kind-$stamp.csv', content);
+      message = saved ? 'Fichier CSV enregistré.' : 'Export annulé.';
+    } on BusinessException catch (e) {
+      message = e.message;
+    } catch (e) {
+      message = 'Export impossible${_code(e)}.';
+    }
+    state = state.copy(busy: false, message: message);
+  }
+
+  /// Cash closing; the summary is returned for display.
+  Future<Map<String, Object?>?> closeCash({
+    required String counted,
+    required String keptFloat,
+    required String comment,
+    String? openingFloat,
+  }) async {
+    Map<String, Object?>? result;
+    await _run(() async {
+      result = await _finance.closeCash(
+        actor,
+        counted: moneyInput(counted),
+        keptFloat: moneyInput(keptFloat),
+        comment: comment,
+        openingFloat: openingFloat == null || openingFloat.trim().isEmpty
+            ? null
+            : moneyInput(openingFloat),
+      );
+      final gap = result!['difference'] as int;
+      return gap == 0
+          ? 'Caisse clôturée : aucun écart.'
+          : 'Caisse clôturée : écart de ${gap > 0 ? '+' : '−'}${fcfa(gap.abs())}.';
+    });
+    return result;
   }
 
   /// Records a return or cancellation, then prints the refund ticket. The

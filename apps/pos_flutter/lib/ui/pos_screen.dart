@@ -7,6 +7,7 @@ import '../domain/models.dart';
 import 'add_variants_screen.dart';
 import 'create_item_screen.dart';
 import 'edit_photos_screen.dart';
+import 'finance_screens.dart';
 import 'mono_theme.dart';
 import 'auth_screens.dart';
 import 'payment_screen.dart';
@@ -125,6 +126,18 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   context,
                   MaterialPageRoute(builder: (_) => const StockScreen()),
                 ),
+                'reports' => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReportsScreen()),
+                ),
+                'expenses' => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ExpensesScreen()),
+                ),
+                'closing' => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CashClosingScreen()),
+                ),
                 'receipt' => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -146,6 +159,27 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   child: ListTile(
                     leading: Icon(Icons.inventory_2_outlined),
                     title: Text('Stock'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'reports',
+                  child: ListTile(
+                    leading: Icon(Icons.bar_chart_outlined),
+                    title: Text('Rapports'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'expenses',
+                  child: ListTile(
+                    leading: Icon(Icons.payments_outlined),
+                    title: Text('Dépenses'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'closing',
+                  child: ListTile(
+                    leading: Icon(Icons.point_of_sale_outlined),
+                    title: Text('Clôture de caisse'),
                   ),
                 ),
                 PopupMenuItem(

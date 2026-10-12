@@ -148,6 +148,53 @@ class SaleReturnLines extends Table {
   Set<Column> get primaryKey => {returnId, variantId};
 }
 
+/// Shop expense (schema v8). Never edited; an error is cancelled with a
+/// traced reason. Kinds keep stock purchases, operating charges and cash
+/// transfers apart so that reports never deduct the same money twice.
+class Expenses extends Table {
+  TextColumn get id => text()();
+  TextColumn get kind => text().check(
+    const CustomExpression<bool>("kind IN ('CHARGE', 'STOCK', 'TREASURY')"),
+  )();
+  TextColumn get category => text()();
+  IntColumn get amount =>
+      integer().check(const CustomExpression<bool>('amount > 0'))();
+  TextColumn get paymentMode => text()();
+  TextColumn get reason => text()();
+  TextColumn get occurredAt => text()();
+  TextColumn get actorId => text()();
+  TextColumn get actorName => text()();
+  TextColumn get recordedAt => text()();
+  TextColumn get cancelledAt => text().nullable()();
+  TextColumn get cancelReason => text().nullable()();
+  TextColumn get cancelledBy => text().nullable()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Cash drawer closing (schema v8): expected cash computed from the float
+/// and cash movements since the previous closing, counted cash and gap.
+class CashClosings extends Table {
+  TextColumn get id => text()();
+  TextColumn get periodStart => text()();
+  TextColumn get closedAt => text()();
+  IntColumn get openingFloat => integer()();
+  IntColumn get cashSales => integer()();
+  IntColumn get cashRefunds => integer()();
+  IntColumn get cashExpenses => integer()();
+  IntColumn get expected => integer()();
+  IntColumn get counted =>
+      integer().check(const CustomExpression<bool>('counted >= 0'))();
+  IntColumn get difference => integer()();
+  IntColumn get keptFloat =>
+      integer().check(const CustomExpression<bool>('kept_float >= 0'))();
+  TextColumn get comment => text()();
+  TextColumn get actorId => text()();
+  TextColumn get actorName => text()();
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 /// Shop settings edited by the administrator (receipt identity, logo).
 class ShopSettings extends Table {
   TextColumn get key => text()();
@@ -181,6 +228,8 @@ class TerminalStates extends Table {
     ShopSettings,
     SaleReturns,
     SaleReturnLines,
+    Expenses,
+    CashClosings,
   ],
 )
 class PosDatabase extends _$PosDatabase {
@@ -188,7 +237,7 @@ class PosDatabase extends _$PosDatabase {
     : super(executor ?? driftDatabase(name: 'mono_recette_v1'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   Future<void> _createLocalPhotoTable() => customStatement('''
     CREATE TABLE local_product_photos (
@@ -198,6 +247,15 @@ class PosDatabase extends _$PosDatabase {
       PRIMARY KEY(product_id, position)
     )
   ''');
+
+  Future<void> _createFinanceIndexes() async {
+    await customStatement(
+      'CREATE INDEX expenses_date_idx ON expenses(occurred_at)',
+    );
+    await customStatement(
+      'CREATE INDEX cash_closings_date_idx ON cash_closings(closed_at)',
+    );
+  }
 
   Future<void> _createReturnIndex() => customStatement(
     'CREATE INDEX sale_returns_sale_idx ON sale_returns(sale_id, occurred_at)',
@@ -223,12 +281,13 @@ class PosDatabase extends _$PosDatabase {
       );
       await _createCorrectionIndex();
       await _createReturnIndex();
+      await _createFinanceIndexes();
     },
     beforeOpen: (_) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },
     onUpgrade: (m, from, to) async {
-      if (from < 1 || to != 7) {
+      if (from < 1 || to != 8) {
         throw StateError('Migration non prise en charge : $from → $to.');
       }
       // Additive steps only: existing sales, stock and outbox stay untouched.
@@ -251,6 +310,11 @@ class PosDatabase extends _$PosDatabase {
         await m.createTable(saleReturns);
         await m.createTable(saleReturnLines);
         await _createReturnIndex();
+      }
+      if (from < 8) {
+        await m.createTable(expenses);
+        await m.createTable(cashClosings);
+        await _createFinanceIndexes();
       }
     },
   );

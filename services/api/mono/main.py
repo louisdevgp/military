@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import AwareDatetime
 from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -12,7 +13,15 @@ from sqlalchemy.orm import Session
 from mono.config import Settings
 from mono.database import open_engine
 from mono.models import Category, Product, Variant
-from mono.schemas import Acknowledgement, Envelope, PublicCatalog, PublicProduct, PublicVariant
+from mono.reports import summary
+from mono.schemas import (
+    Acknowledgement,
+    Envelope,
+    PublicCatalog,
+    PublicProduct,
+    PublicVariant,
+    ReportSummary,
+)
 from mono.sync import SyncError, apply_event
 
 
@@ -94,6 +103,17 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             raise HTTPException(409, "DATABASE_CONFLICT") from exc
         except SQLAlchemyError as exc:
             raise HTTPException(503, "TRANSACTION_NOT_CONFIRMED") from exc
+
+    @app.get(
+        "/api/private/reports/summary",
+        response_model=ReportSummary,
+        dependencies=[Depends(authorize)],
+    )
+    def report_summary(start: AwareDatetime, end: AwareDatetime) -> ReportSummary:
+        if end <= start:
+            raise HTTPException(422, "INVALID_PERIOD")
+        with Session(database) as session:
+            return summary(session, start.astimezone(UTC), end.astimezone(UTC))
 
     @app.get("/api/public/catalog", response_model=PublicCatalog)
     def catalog(

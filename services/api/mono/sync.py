@@ -9,8 +9,10 @@ from sqlalchemy.orm import Session
 
 from mono.models import (
     Actor,
+    CashClosing,
     Category,
     Event,
+    Expense,
     Movement,
     Product,
     Sale,
@@ -22,8 +24,11 @@ from mono.models import (
 )
 from mono.schemas import (
     Acknowledgement,
+    CashClosed,
     CatalogCreated,
     Envelope,
+    ExpenseCancelled,
+    ExpenseRecorded,
     PaymentCorrected,
     PriceChanged,
     ReceiptSettingsUpdated,
@@ -101,6 +106,12 @@ def apply_event(session: Session, incoming: Envelope) -> Acknowledgement:
             target_user(session, UserPinReset.model_validate(incoming.payload).user_id)
         elif incoming.kind == "sale.returned":
             return_sale(session, incoming, SaleReturned.model_validate(incoming.payload))
+        elif incoming.kind == "expense.recorded":
+            record_expense(session, incoming, ExpenseRecorded.model_validate(incoming.payload))
+        elif incoming.kind == "expense.cancelled":
+            cancel_expense(session, incoming, ExpenseCancelled.model_validate(incoming.payload))
+        elif incoming.kind == "cash.closed":
+            close_cash(session, incoming, CashClosed.model_validate(incoming.payload))
         elif incoming.kind == "stock.moved":
             move_stock(session, incoming, StockMoved.model_validate(incoming.payload))
         elif incoming.kind == "variant.updated":
@@ -158,6 +169,57 @@ def target_user(session: Session, user_id: str) -> Actor:
     if user is None:
         raise SyncError("USER_MISSING")
     return user
+
+
+def record_expense(session: Session, event: Envelope, data: ExpenseRecorded) -> None:
+    session.add(
+        Expense(
+            id=str(event.id),
+            kind=data.kind,
+            category=data.category,
+            amount=data.amount,
+            payment_mode=data.payment_mode,
+            reason=data.reason,
+            occurred_at=data.occurred_at.astimezone(UTC),
+            recorded_at=event.occurred_at.astimezone(UTC),
+            actor_id=event.actor_id,
+        )
+    )
+
+
+def cancel_expense(session: Session, event: Envelope, data: ExpenseCancelled) -> None:
+    expense = session.get(Expense, str(data.expense_id))
+    if expense is None:
+        raise SyncError("EXPENSE_MISSING")
+    if expense.cancelled_at is not None:
+        raise SyncError("EXPENSE_ALREADY_CANCELLED")
+    expense.cancelled_at = event.occurred_at.astimezone(UTC)
+    expense.cancel_reason = data.reason
+
+
+def close_cash(session: Session, event: Envelope, data: CashClosed) -> None:
+    expected = data.opening_float + data.cash_sales - data.cash_refunds - data.cash_expenses
+    if data.expected != expected or data.difference != data.counted - expected:
+        raise SyncError("CASH_CLOSING_MISMATCH")
+    if data.kept_float > data.counted:
+        raise SyncError("CASH_CLOSING_MISMATCH")
+    session.add(
+        CashClosing(
+            id=str(event.id),
+            period_start=data.period_start.astimezone(UTC),
+            closed_at=event.occurred_at.astimezone(UTC),
+            opening_float=data.opening_float,
+            cash_sales=data.cash_sales,
+            cash_refunds=data.cash_refunds,
+            cash_expenses=data.cash_expenses,
+            expected=data.expected,
+            counted=data.counted,
+            difference=data.difference,
+            kept_float=data.kept_float,
+            comment=data.comment,
+            actor_id=event.actor_id,
+        )
+    )
 
 
 def return_sale(session: Session, event: Envelope, data: SaleReturned) -> None:

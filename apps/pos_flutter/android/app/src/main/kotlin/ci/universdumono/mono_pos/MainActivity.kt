@@ -9,11 +9,21 @@ class MainActivity : FlutterActivity() {
     private lateinit var photos: PhotoBridge
     private lateinit var printer: PrinterBridge
     private lateinit var secrets: SecureStoreBridge
+    private lateinit var exports: ExportBridge
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         photos = PhotoBridge(this)
         printer = PrinterBridge(applicationContext)
         secrets = SecureStoreBridge(applicationContext)
+        exports = ExportBridge(this)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ci.universdumono/export")
+            .setMethodCallHandler { call, result ->
+                if (call.method == "saveCsv") {
+                    exports.save(call.argument<String>("name"), call.argument<String>("content"), result)
+                } else {
+                    result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "ci.universdumono/secure")
             .setMethodCallHandler { call, result ->
                 val name = call.argument<String>("key")
@@ -46,11 +56,13 @@ class MainActivity : FlutterActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == PhotoBridge.REQUEST_CODE && ::photos.isInitialized) photos.onResult(resultCode, data)
+        if (requestCode == ExportBridge.REQUEST_CODE && ::exports.isInitialized) exports.onResult(resultCode, data)
     }
 
     override fun onDestroy() {
         if (::photos.isInitialized) photos.close()
         if (::printer.isInitialized) printer.close()
+        if (::exports.isInitialized) exports.close()
         super.onDestroy()
     }
 }
