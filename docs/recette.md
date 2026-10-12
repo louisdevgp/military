@@ -168,6 +168,7 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - **Export CSV** (synthèse, lignes de vente, dépenses) via le sélecteur de documents Android (aucune permission) ; « ; », UTF-8 avec BOM, formules neutralisées.
 - SQLite v8, Alembic 0007 (RLS). Événements `expense.recorded`, `expense.cancelled`, `cash.closed` (cohérence arithmétique contrôlée). Point privé `/api/private/reports/summary` ; **concordance testée** : le rapport du jour calculé par le terminal (contrat, 17 événements) est identique au rapport du serveur après rejeu.
 - Flutter : analyse sans anomalie, **57 tests réussis** (finances, CSV, parcours écran dépense → clôture → rapport sur 360 dp). API : **27 réussis sur PostgreSQL 18.6**, 26 + 1 ignoré sur SQLite ; base de contrôle en `0007 (head)`.
+- Serveur Render redéployé (liste OpenAPI : `/api/private/reports/summary` et les 14 types d'événements), puis APK 0.11.0+17 mis à jour par USB (données conservées). Artefact `livrables/mono-recette-0.11.0-debug.apk`, SHA-256 `52A816BDA2FEA0CBEA0A18C343E37A4B5F0A2CB39DDAD18E92569BB7A94873A7`.
 - Limites : dépenses et clôtures réservées à l'administrateur ; caisse attendue calculée sur le terminal (le serveur vérifie la cohérence, pas les montants) ; enregistrement CSV non encore essayé sur l'appareil.
 
 ## Limites matérielles et fonctionnelles
