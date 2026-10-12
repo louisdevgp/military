@@ -139,6 +139,12 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - APK 0.9.1 recompilé depuis `0797ea2` et mis à jour sur le H10 (données conservées). État avant synchronisation : 10 opérations en attente, terminal `c4fc8f41-…`.
 - **Intervention hors application** à la demande de l'utilisateur : l'administrateur était bloqué (6 erreurs de PIN) et l'application n'offre aucune récupération du code administrateur. Base sauvegardée sur le PC (`.artifacts/backups/`, non versionné), puis, application arrêtée, seul le compte administrateur modifié via `run-as` : nouveau PIN provisoire (PBKDF2-HMAC-SHA256, 20 000 itérations, sel aléatoire), compteur d'erreurs remis à zéro, blocage levé. Intégrité SQLite OK, opérations en attente inchangées, base recopiée vérifiée par empreinte. **Aucun événement d'audit n'a été produit pour cette modification.** Code provisoire communiqué à l'utilisateur, à remplacer depuis Utilisateurs → Nouveau code PIN.
 
+## 12 octobre 2026 — synchronisation réelle H10 → Render → Supabase
+
+- Répétition à blanc : les 10 opérations en attente du H10 rejouées dans l'ordre sur une copie locale du serveur (PostgreSQL 18.6, même terminal) : 10/10 acceptées.
+- Synchronisation réelle depuis le H10 vers `https://mono-api-recette.onrender.com` : **réussie selon l'utilisateur** (« tout marche » : synchronisation, nouvelle vente, contrôle dans Supabase). Constat sur l'appareil par lecture de la base : **11/11 opérations `synced`**, aucune en attente ni en erreur, dernière synchronisation `2026-10-12T21:13:04Z`, 3 ventes.
+- Limites inchangées : synchronisation manuelle, configuration à ressaisir après redémarrage (lot 4), jeton de recette partagé.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).
