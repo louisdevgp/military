@@ -14,8 +14,9 @@ Aucun secret n'est dans le dépôt : le mot de passe de la base se saisit dans R
 
 1. Créer un projet : région **Central EU (Frankfurt)**, mot de passe de base fort (gestionnaire de mots de passe, jamais dans le dépôt ni dans une conversation).
 2. Bouton **Connect** → onglet **Session pooler** (compatible IPv4, nécessaire depuis Render). Copier l'URI.
-3. La transformer pour SQLAlchemy/psycopg :
-   `postgresql+psycopg://postgres.<ref>:<MOT_DE_PASSE>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require`
+3. Remplacer `[YOUR-PASSWORD]` par le mot de passe et ajouter `?sslmode=require` à la fin :
+   `postgresql://postgres.<ref>:<MOT_DE_PASSE>@aws-<n>-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require`
+   - le préfixe `postgresql://` (ou `postgres://`) donné par Supabase est accepté tel quel : l'API le convertit en `postgresql+psycopg://` (pilote installé) ;
    - garder l'hôte et l'utilisateur exacts donnés par Supabase ;
    - encoder les caractères spéciaux du mot de passe (`@` → `%40`, `#` → `%23`, `/` → `%2F`, `:` → `%3A`).
 4. Recommandé : **Project Settings → Data API** : désactiver l'API de données (l'application ne l'utilise pas). La migration 0004 active en plus la sécurité par ligne (RLS) sur toutes les tables, ce qui bloque l'accès par cette API même si elle reste active.
