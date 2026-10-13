@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Guide utilisateur — Caisse L'Univers du Mono</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  :root { --blue: #1d4fb8; --ink: #172b23; --muted: #5d6a63; --line: #d9e0dc; --pale: #eef3fb; --warn: #fff4e0; --warn-ink: #8a4b00; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; margin: 0; }
+  h1 { font-size: 26pt; margin: 0 0 6px; color: var(--blue); }
+  h2 { font-size: 15pt; color: var(--blue); border-bottom: 2px solid var(--blue); padding-bottom: 4px; margin: 0 0 12px; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; break-after: avoid; }
+  p { margin: 0 0 8px; }
+  ol, ul { margin: 0 0 10px; padding-left: 20px; }
+  li { margin-bottom: 3px; }
+  section { break-before: page; }
+  .ui { font-weight: 600; background: var(--pale); border: 1px solid #cdd9f0; border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+  .box { border-radius: 8px; padding: 10px 12px; margin: 10px 0; break-inside: avoid; }
+  .tip { background: var(--pale); border-left: 4px solid var(--blue); }
+  .warn { background: var(--warn); border-left: 4px solid #e08a00; color: var(--warn-ink); }
+  .box b:first-child { display: block; margin-bottom: 2px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--pale); }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+  .cover img { width: 62mm; margin-bottom: 14mm; }
+  .cover .sub { font-size: 14pt; color: var(--muted); margin-bottom: 18mm; }
+  .cover .meta { font-size: 10pt; color: var(--muted); }
+  .toc { columns: 2; column-gap: 12mm; padding-left: 18px; }
+  .toc li { break-inside: avoid; }
+  .check li { list-style: "☐  "; }
+  .roles { display: inline-block; font-size: 8.5pt; font-weight: 700; color: #fff; background: var(--blue); border-radius: 10px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+  .roles.all { background: #3a7d5c; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <img src="logo.png" alt="Logo L'Univers du Mono">
+  <h1>Guide utilisateur</h1>
+  <div class="sub">Application de caisse — terminal SENRAISE H10</div>
+  <div class="meta">L'Univers du Mono · Édition d'octobre 2026 · version 0.14</div>
+</div>
+
+<section style="break-before: page">
+  <h2>Sommaire</h2>
+  <ol class="toc">
+    <li>L'essentiel en une page</li>
+    <li>Premier démarrage</li>
+    <li>Utilisateurs, PIN et code de secours</li>
+    <li>Vendre</li>
+    <li>Corriger, rembourser, annuler</li>
+    <li>Articles et stock</li>
+    <li>Dépenses, clôture de caisse, rapports</li>
+    <li>Ticket et réglages de la boutique</li>
+    <li>Synchronisation avec le serveur</li>
+    <li>Sauvegarde et changement de terminal</li>
+    <li>En cas de problème</li>
+    <li>Routines conseillées</li>
+    <li>Services en ligne et abonnement</li>
+  </ol>
+
+  <h2 style="margin-top:22px">1. L'essentiel en une page</h2>
+  <ul>
+    <li><b>La caisse fonctionne sans Internet.</b> Ventes, tickets, stock et rapports sont enregistrés sur le terminal. Internet sert seulement à envoyer une copie des opérations au serveur.</li>
+    <li><b>Deux rôles.</b> L'<b>administrateur</b> gère les articles, les prix, le stock, les utilisateurs, les dépenses et les réglages. Le <b>vendeur</b> vend et imprime les tickets.</li>
+    <li><b>Chacun a son code PIN</b> à 6 chiffres. Chaque vente porte le nom de la personne connectée.</li>
+    <li><b>Le terminal se verrouille</b> tout seul après 5 minutes sans utilisation, ou en touchant le cadenas.</li>
+    <li><b>Rien ne s'efface.</b> Une erreur se corrige par une nouvelle opération (correction, retour, annulation), et l'historique garde tout.</li>
+    <li><b>Le stock ne peut jamais être négatif.</b> Un article épuisé ne peut pas être vendu.</li>
+    <li><b>Une sauvegarde par semaine</b> (au minimum) protège la boutique en cas de perte ou de panne du terminal.</li>
+  </ul>
+  <div class="box warn"><b>À ne jamais faire</b>Désinstaller l'application ou « effacer les données » dans les réglages Android : toutes les données du terminal seraient perdues. En cas de doute, appelez votre prestataire.</div>
+  <table>
+    <tr><th style="width:34%">Où trouver quoi</th><th>Accès</th></tr>
+    <tr><td>Articles, panier, historique</td><td>Onglets en bas de l'écran : <span class="ui">Articles</span>, <span class="ui">Panier</span>, <span class="ui">Historique</span></td></tr>
+    <tr><td>Fonctions de l'administrateur</td><td>Icône <span class="ui">Administration</span> en haut : Utilisateurs, Stock, Rapports, Dépenses, Clôture de caisse, Sauvegarde, Ticket et boutique, Synchronisation</td></tr>
+    <tr><td>Créer un article</td><td>Bouton <span class="ui">+</span> (Créer un article), administrateur seulement</td></tr>
+    <tr><td>Verrouiller</td><td>Icône cadenas en haut</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>2. Premier démarrage <span class="roles">Administrateur</span></h2>
+  <p>Le catalogue est vide au premier lancement : aucun article ni compte n'est créé à l'avance.</p>
+  <ol>
+    <li>Ouvrez l'application. L'écran <span class="ui">Activation du terminal</span> s'affiche.</li>
+    <li>Saisissez le <b>nom de l'administrateur</b> et un <b>code PIN de 6 chiffres</b>, deux fois. Les codes trop simples sont refusés (000000, 123456, 654321…).</li>
+    <li>Touchez <span class="ui">Activer le terminal</span>.</li>
+    <li>Un <b>code de secours</b> s'affiche (format <code>XXXX-XXXX-XXXX-XXXX</code>). <b>Recopiez-le sur papier</b>, cochez <span class="ui">J'ai noté ce code en lieu sûr</span>, puis touchez <span class="ui">Continuer</span>. Il ne sera plus jamais affiché (voir chapitre 3).</li>
+    <li>Créez vos vendeurs (chapitre 3) et vos articles (chapitre 6), puis réglez le ticket (chapitre 8).</li>
+    <li>Faites un <span class="ui">Ticket test</span> pour vérifier l'imprimante.</li>
+  </ol>
+  <div class="box tip"><b>Terminal de remplacement ?</b>Ne créez pas un nouveau compte : utilisez <span class="ui">Restaurer une sauvegarde</span>, en bas du même écran. Comptes, articles, stock et ventes sont récupérés (chapitre 10).</div>
+
+  <h2 style="margin-top:22px">3. Utilisateurs, PIN et code de secours <span class="roles">Administrateur</span></h2>
+  <h3>Ajouter, modifier, désactiver un utilisateur</h3>
+  <ol>
+    <li><span class="ui">Administration</span> → <span class="ui">Utilisateurs</span> → <span class="ui">Ajouter</span>.</li>
+    <li>Nom, rôle (<b>Vendeur</b> ou <b>Admin</b>), code PIN deux fois, puis <span class="ui">Enregistrer</span>.</li>
+    <li>Le menu à droite d'un nom permet de donner un <span class="ui">Nouveau code PIN</span> ou de <span class="ui">Désactiver</span> la personne (départ d'un employé). Ses ventes passées restent à son nom.</li>
+  </ol>
+  <p>Il reste toujours au moins un administrateur actif. <b>Nous recommandons d'en avoir deux</b> : chacun peut redonner un PIN à l'autre.</p>
+  <h3>Se connecter</h3>
+  <p>Touchez votre nom, puis tapez votre PIN sur le pavé. Après 5 erreurs, l'accès est bloqué 1 minute, puis plus longtemps. Un administrateur peut redonner un PIN à tout moment.</p>
+  <h3>Le code de secours</h3>
+  <ul>
+    <li>Il sert si <b>tous</b> les PIN administrateur sont oubliés. Gardez-le <b>sur papier, hors de la boutique</b>, jamais en photo sur un téléphone.</li>
+    <li>Pour en créer un, ou pour le remplacer s'il a été vu par quelqu'un : <span class="ui">Utilisateurs</span> → <span class="ui">Code de secours administrateur</span> → <span class="ui">Créer</span> ou <span class="ui">Renouveler</span>. L'ancien code cesse aussitôt de fonctionner.</li>
+  </ul>
+  <h3>PIN administrateur oublié</h3>
+  <ol>
+    <li>Sur l'écran de verrouillage, touchez <span class="ui">PIN administrateur oublié ?</span></li>
+    <li>Saisissez le code de secours, choisissez l'administrateur, puis entrez le nouveau PIN deux fois.</li>
+    <li>Touchez <span class="ui">Choisir ce nouveau PIN</span>. Un <b>nouveau code de secours</b> s'affiche : notez-le, l'ancien ne fonctionne plus.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>4. Vendre <span class="roles all">Tous</span></h2>
+  <ol>
+    <li>Connectez-vous avec votre PIN.</li>
+    <li>Dans <span class="ui">Articles</span>, touchez les articles vendus : choisissez la couleur et la taille (ou pointure) si on vous le demande. Le compteur du <span class="ui">Panier</span> augmente.</li>
+    <li>Dans <span class="ui">Panier</span>, ajustez les quantités avec <span class="ui">+</span> et <span class="ui">−</span>, puis touchez <span class="ui">Passer au paiement</span>.</li>
+    <li>Choisissez le mode de paiement : <b>Espèces</b>, <b>Mobile Money déclaré</b>, <b>Virement déclaré</b> ou <b>Autre</b>.</li>
+    <li>En espèces, saisissez la <b>somme remise</b> par le client (ou touchez <span class="ui">Montant exact</span> ou un billet proposé). La <b>monnaie à rendre</b> s'affiche.</li>
+    <li>Si l'administrateur l'a demandé, remplissez les <b>informations client</b> marquées d'une « * ».</li>
+    <li>Touchez <span class="ui">Valider la vente</span>. Le ticket s'imprime.</li>
+  </ol>
+  <div class="box tip"><b>Contrôle de la somme remise</b>Si la monnaie à rendre semble inhabituelle, l'application demande de vérifier. Touchez <span class="ui">Corriger</span> pour revenir, ou <span class="ui">Confirmer</span> si le client a bien remis cette somme.</div>
+  <div class="box warn"><b>Mobile Money et virement</b>L'application ne débite pas le client : elle enregistre ce que vous déclarez. Vérifiez sur votre téléphone que le paiement est bien arrivé <b>avant</b> de valider.</div>
+  <h3>Retrouver une vente, réimprimer un ticket</h3>
+  <p>Onglet <span class="ui">Historique</span> : chaque vente montre son numéro (FACT-2026-…), son heure, son vendeur et son total. Le menu <span class="ui">Actions sur la vente</span> donne l'<span class="ui">Aperçu du duplicata</span>, qui se réimprime avec les réglages actuels du ticket (logo, contacts).</p>
+  <h3>Après une vente</h3>
+  <p>Vérifiez que le ticket est bien sorti et lisible. L'imprimante ne signale pas toujours un manque de papier : en cas de ticket blanc ou absent, changez le rouleau et réimprimez le duplicata.</p>
+</section>
+
+<section>
+  <h2>5. Corriger, rembourser, annuler <span class="roles">Administrateur</span></h2>
+  <p>Ces opérations se font depuis <span class="ui">Historique</span> → <span class="ui">Actions sur la vente</span>. Un motif est toujours demandé, et la vente d'origine reste visible.</p>
+  <table>
+    <tr><th style="width:28%">Situation</th><th>Que faire</th></tr>
+    <tr><td>Mauvaise somme remise saisie, ou mauvais mode de paiement</td><td><span class="ui">Corriger le paiement</span> : saisissez la somme réellement remise et le motif. Le ticket et les rapports tiennent compte de la correction.</td></tr>
+    <tr><td>Le client rapporte un ou plusieurs articles</td><td><span class="ui">Retour ou annulation</span> → choisissez les quantités rendues, indiquez si l'article est <b>revendable</b> (il revient en stock) ou non, le mode de remboursement, puis <span class="ui">Rembourser</span>. Un ticket de retour s'imprime.</td></tr>
+    <tr><td>Vente entièrement faite par erreur</td><td><span class="ui">Retour ou annulation</span> → <span class="ui">Annuler la vente</span> → <span class="ui">Oui, annuler</span>. Le reste de la vente est remboursé et le stock revendable est remis.</td></tr>
+  </table>
+  <p>On ne peut pas rendre plus que ce qui a été vendu. Les remboursements apparaissent dans les rapports et la clôture de caisse.</p>
+
+  <h2 style="margin-top:22px">6. Articles et stock <span class="roles">Administrateur</span></h2>
+  <h3>Créer un article</h3>
+  <ol>
+    <li>Touchez <span class="ui">+</span> (Créer un article) : catégorie, nom, référence, prix, photos (jusqu'à 3).</li>
+    <li>Pour un article décliné, choisissez la grille : <b>Tailles treillis</b> (M, L, XL, XXL, XXXL) ou <b>Pointures rangers</b> (38 à 46), puis ajoutez les <b>couleurs</b>.</li>
+    <li>Saisissez la <b>quantité réelle</b> pour chaque couleur et chaque taille. Laissez vide une combinaison que vous n'avez pas. Vous pouvez ajouter plus tard une couleur ou une taille avec <span class="ui">Couleurs / tailles</span>.</li>
+    <li>Touchez <span class="ui">Enregistrer l'article</span>.</li>
+  </ol>
+  <h3>Modifier un prix, des photos</h3>
+  <p>Sur la fiche de l'article : <span class="ui">Modifier le prix</span> (un même prix pour toutes les tailles, ou un prix par taille) ou <span class="ui">Modifier les photos</span>. Le changement de prix s'applique aux ventes suivantes ; les anciens tickets gardent leur prix.</p>
+  <h3>Gérer le stock</h3>
+  <p><span class="ui">Administration</span> → <span class="ui">Stock</span> : touchez une ligne pour :</p>
+  <ul>
+    <li><b>Réception</b> : arrivage de marchandise (ajoute au stock) ;</li>
+    <li><b>Perte</b> : casse, vol, article abîmé (retire du stock) ;</li>
+    <li><b>Correction</b> : ajuster après une erreur de saisie ;</li>
+    <li><b>Seuil d'alerte</b> : le stock est signalé « stock faible » sous ce niveau ;</li>
+    <li><b>Désactiver</b> une couleur ou une taille qui n'est plus vendue ;</li>
+    <li><b>Retirer l'article de la vente</b> : retire d'un coup toutes ses couleurs et tailles. Rien n'est effacé, et <b>Remettre tout l'article en vente</b> annule l'opération ;</li>
+    <li><b>Historique</b> : tous les mouvements, avec la date, l'auteur et le motif.</li>
+  </ul>
+  <p>Le filtre <b>Stock faible ou épuisé</b> montre ce qu'il faut recommander. Le bouton <span class="ui">Inventaire</span> permet de saisir les quantités comptées en rayon : l'application enregistre les écarts.</p>
+</section>
+
+<section>
+  <h2>7. Dépenses, clôture de caisse, rapports <span class="roles">Administrateur</span></h2>
+  <h3>Dépenses</h3>
+  <p><span class="ui">Administration</span> → <span class="ui">Dépenses</span> → <span class="ui">Dépense</span> : type (<b>Charge</b> : loyer, transport… ; <b>Achat de stock</b> ; <b>Mouvement de trésorerie</b> : retrait, dépôt en banque), catégorie, montant, motif, mode de règlement et date. Une erreur se corrige avec <span class="ui">Annuler la dépense</span> (motif obligatoire) : la dépense reste visible, barrée.</p>
+  <h3>Clôture de caisse (chaque soir)</h3>
+  <ol>
+    <li><span class="ui">Administration</span> → <span class="ui">Clôture de caisse</span>. L'application calcule les <b>espèces attendues</b> : fond de caisse + ventes en espèces − remboursements − dépenses en espèces.</li>
+    <li>Comptez le tiroir et saisissez les <b>espèces comptées</b>. En cas d'écart, un commentaire est obligatoire.</li>
+    <li>Indiquez le <b>fond de caisse conservé pour demain</b>, puis touchez <span class="ui">Clôturer la caisse</span>.</li>
+  </ol>
+  <p>À la toute première clôture, saisissez le fond de caisse de départ.</p>
+  <h3>Rapports</h3>
+  <p><span class="ui">Administration</span> → <span class="ui">Rapports</span> : par jour, semaine, mois, année ou période choisie (flèches pour changer de période). Vous y trouvez les ventes brutes, les retours, les ventes nettes, la répartition par mode de paiement, par catégorie et par article, les dépenses, les clôtures, le stock et les alertes.</p>
+  <p>L'icône <span class="ui">Exporter en CSV</span> enregistre la <b>Synthèse</b>, les <b>Lignes de vente</b> ou les <b>Dépenses</b> dans un fichier qui s'ouvre avec Excel.</p>
+  <div class="box tip"><b>Note</b>L'application ne calcule pas de « bénéfice » : les prix d'achat des articles ne sont pas enregistrés.</div>
+
+  <h2 style="margin-top:22px">8. Ticket et réglages de la boutique <span class="roles">Administrateur</span></h2>
+  <p><span class="ui">Administration</span> → <span class="ui">Ticket et boutique</span> :</p>
+  <ul>
+    <li><b>Logo</b> : <span class="ui">Logo d'origine</span>, <span class="ui">Choisir une image</span> ou <span class="ui">Sans logo</span> ;</li>
+    <li><b>Nom de la boutique</b>, <b>Contacts</b> et <b>Pied de ticket</b> imprimés sur chaque ticket (par exemple « Votre satisfaction, notre motivation. ») ;</li>
+    <li><b>Informations client obligatoires</b> : rendez obligatoires, si besoin, le nom, les prénoms, l'unité ou le téléphone du client. Par défaut, rien n'est obligatoire ;</li>
+    <li><span class="ui">Ticket test</span> pour contrôler l'impression.</li>
+  </ul>
+  <p>Les duplicatas réimprimés utilisent toujours les réglages actuels.</p>
+</section>
+
+<section>
+  <h2>9. Synchronisation avec le serveur <span class="roles">Administrateur</span></h2>
+  <p>Le terminal envoie une copie de chaque opération au serveur : automatiquement 5 secondes après chaque opération, et toutes les 2 minutes quand l'application est ouverte. Sans Internet, les opérations attendent sur le terminal et partent au retour de la connexion. <b>La caisse n'est jamais bloquée par le serveur.</b></p>
+  <h3>Activer la synchronisation (une seule fois)</h3>
+  <ol>
+    <li>Demandez un <b>code d'activation</b> à votre prestataire. Il est valable 15 minutes et ne sert qu'une fois.</li>
+    <li><span class="ui">Administration</span> → <span class="ui">Synchronisation</span> → <span class="ui">Activer</span>. Saisissez l'adresse du serveur donnée par votre prestataire, puis le code.</li>
+    <li>Touchez <span class="ui">Activer la synchronisation</span>. Le message « Terminal activé » confirme l'activation.</li>
+  </ol>
+  <h3>Vérifier que tout est envoyé</h3>
+  <p>L'écran <span class="ui">Synchronisation</span> affiche « Tout est synchronisé » ou le nombre d'opérations en attente, avec la date de la dernière synchronisation. <span class="ui">Synchroniser maintenant</span> relance l'envoi tout de suite.</p>
+  <div class="box warn"><b>Terminal perdu ou volé</b>Prévenez immédiatement votre prestataire : il coupe l'accès du terminal au serveur en quelques secondes. Les données du terminal sont chiffrées et protégées par les codes PIN.</div>
+
+  <h2 style="margin-top:22px">10. Sauvegarde et changement de terminal <span class="roles">Administrateur</span></h2>
+  <p>La synchronisation n'est pas une sauvegarde complète : elle n'envoie pas les photos ni les comptes avec leurs PIN. Seule la sauvegarde permet de remettre la boutique en route sur un autre terminal.</p>
+  <h3>Faire une sauvegarde (au moins chaque semaine)</h3>
+  <ol>
+    <li><span class="ui">Administration</span> → <span class="ui">Sauvegarde</span>.</li>
+    <li>Choisissez un <b>mot de passe de sauvegarde</b> (10 caractères minimum), saisissez-le deux fois et <b>notez-le</b> avec le code de secours. Sans lui, la sauvegarde ne peut pas être ouverte, même par le prestataire.</li>
+    <li>Touchez <span class="ui">Créer et enregistrer la sauvegarde</span>, puis choisissez où enregistrer le fichier <code>.monobak</code>.</li>
+    <li>Copiez ensuite ce fichier <b>hors du terminal</b> : clé USB, ordinateur, Google Drive…</li>
+  </ol>
+  <h3>Restaurer sur un nouveau terminal</h3>
+  <ol>
+    <li>Installez l'application, puis touchez <span class="ui">Restaurer une sauvegarde</span> sur l'écran d'activation. Sur un terminal déjà en service : <span class="ui">Sauvegarde</span> → <span class="ui">Restaurer…</span></li>
+    <li>Choisissez le fichier et saisissez son mot de passe. L'application redémarre.</li>
+    <li>Connectez-vous avec un PIN administrateur <b>valable dans cette sauvegarde</b>, puis touchez <span class="ui">Réconcilier maintenant</span> (écran Synchronisation). Les ventes faites après la sauvegarde sont alors récupérées depuis le serveur.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>11. En cas de problème</h2>
+  <table>
+    <tr><th style="width:32%">Problème</th><th>Solution</th></tr>
+    <tr><td>Le ticket ne sort pas ou sort blanc</td><td>Vérifiez le rouleau (sens du papier thermique) et le capot. Faites un <span class="ui">Ticket test</span>, puis réimprimez le duplicata depuis l'Historique.</td></tr>
+    <tr><td>« Code PIN incorrect », accès bloqué</td><td>Attendez la fin du blocage ou demandez à un administrateur un <span class="ui">Nouveau code PIN</span>.</td></tr>
+    <tr><td>Tous les PIN administrateur oubliés</td><td><span class="ui">PIN administrateur oublié ?</span> avec le code de secours (chapitre 3).</td></tr>
+    <tr><td>Opérations « en attente » qui ne partent pas</td><td>Vérifiez Internet, puis touchez <span class="ui">Synchroniser maintenant</span>. Si un message d'erreur reste affiché, notez-le et contactez votre prestataire. Les ventes restent enregistrées sur le terminal.</td></tr>
+    <tr><td>« Terminal désactivé côté serveur » ou « Accès refusé »</td><td>Demandez un nouveau code d'activation, puis <span class="ui">Synchronisation</span> → <span class="ui">Réactiver</span>.</td></tr>
+    <tr><td>Article impossible à vendre</td><td>Stock épuisé, ou article désactivé : <span class="ui">Stock</span> → enregistrez une réception ou réactivez l'article.</td></tr>
+    <tr><td>« Restauration à terminer »</td><td>Après une restauration, aucune nouvelle vente n'est possible avant <span class="ui">Réconcilier maintenant</span> (Synchronisation).</td></tr>
+    <tr><td>Message « Impossible d'ouvrir la base locale » ou « Clé de la base locale introuvable »</td><td><b>Ne désinstallez pas l'application.</b> Contactez votre prestataire, avec votre dernière sauvegarde.</td></tr>
+  </table>
+
+  <h2 style="margin-top:22px">12. Routines conseillées</h2>
+  <h3>Chaque jour</h3>
+  <ul class="check">
+    <li>Ticket test le matin si le rouleau a été changé</li>
+    <li>Vérifier les paiements Mobile Money avant de valider</li>
+    <li>Clôture de caisse le soir</li>
+    <li>Contrôler « Tout est synchronisé » (Internet disponible)</li>
+  </ul>
+  <h3>Chaque semaine</h3>
+  <ul class="check">
+    <li>Sauvegarde, puis copie du fichier hors du terminal</li>
+    <li>Consulter « Stock faible ou épuisé » et préparer les commandes</li>
+    <li>Rapport de la semaine, et export CSV si besoin</li>
+  </ul>
+  <h3>Chaque mois</h3>
+  <ul class="check">
+    <li>Inventaire d'une partie du rayon</li>
+    <li>Vérifier la liste des utilisateurs (désactiver les départs)</li>
+    <li>Vérifier que le code de secours et le mot de passe de sauvegarde sont toujours rangés en lieu sûr</li>
+  </ul>
+</section>
+
+<section>
+  <h2>13. Services en ligne et abonnement</h2>
+  <p>L'application de caisse elle-même est gratuite à utiliser et fonctionne sans Internet. Deux services en ligne reçoivent la copie des opérations :</p>
+  <table>
+    <tr><th>Service</th><th>Rôle</th><th>Formule conseillée</th><th>Coût mensuel</th></tr>
+    <tr><td><b>Render</b></td><td>Serveur (API) qui reçoit et contrôle les opérations du terminal</td><td>Web service <b>Starter</b>, toujours allumé</td><td>7 $</td></tr>
+    <tr><td><b>Supabase</b></td><td>Base de données du serveur</td><td><b>Pro</b> : jamais mise en pause, sauvegarde quotidienne gardée 7 jours, 8 Go</td><td>25 $</td></tr>
+    <tr><th colspan="3">Total</th><th>32 $ ≈ 19 000 à 20 000 FCFA</th></tr>
+  </table>
+  <p>Le montant en FCFA dépend du taux de change et des frais de la carte bancaire. Le paiement se fait par carte (Visa ou Mastercard) directement auprès de chaque service.</p>
+  <h3>Pourquoi ne pas rester sur les formules gratuites ?</h3>
+  <ul>
+    <li><b>Render gratuit</b> éteint le serveur après 15 minutes sans activité. Le réveil prend environ une minute : la synchronisation est retardée, sans bloquer la caisse.</li>
+    <li><b>Supabase gratuit</b> met la base en pause après une semaine sans activité (fermeture, congés) et ne fait <b>aucune sauvegarde automatique</b>.</li>
+  </ul>
+  <div class="box tip"><b>Formule économique (7 $ par mois, environ 4 000 FCFA)</b>Render Starter + Supabase gratuit. C'est possible tant que la boutique synchronise au moins une fois par semaine, mais il faut réactiver la base après une longue fermeture, et la sauvegarde du serveur dépend alors d'une tâche automatique gérée par le prestataire.</div>
+  <h3>À prévoir plus tard</h3>
+  <ul>
+    <li>Un <b>nom de domaine</b> (environ 10 à 15 $ par an) si un catalogue public sur Internet est mis en ligne.</li>
+    <li>Une hausse éventuelle si les volumes augmentent fortement : ce n'est pas attendu pour une boutique avec un seul terminal.</li>
+  </ul>
+  <p style="color:var(--muted); font-size:9pt; margin-top:14px">Tarifs publics constatés en octobre 2026 sur render.com et supabase.com, susceptibles d'évoluer.</p>
+</section>
+
+</body>
+</html>
