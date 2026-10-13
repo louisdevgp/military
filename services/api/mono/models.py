@@ -194,3 +194,27 @@ class CashClosing(Base):
     kept_float: Mapped[int] = mapped_column(BigInteger)
     comment: Mapped[str] = mapped_column(String(200))
     actor_id: Mapped[str] = mapped_column(ForeignKey("actors.id"))
+
+
+class ActivationCode(Base):
+    """One-time terminal activation code; only its SHA-256 is stored."""
+
+    __tablename__ = "activation_codes"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failures: Mapped[int] = mapped_column(BigInteger, default=0)
+
+
+class TerminalCredential(Base):
+    """Device credential obtained at activation, exchanged for short tokens."""
+
+    __tablename__ = "terminal_credentials"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    terminal_id: Mapped[str] = mapped_column(ForeignKey("terminals.id"), index=True)
+    secret_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

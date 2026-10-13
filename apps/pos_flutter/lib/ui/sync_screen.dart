@@ -18,13 +18,13 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
   late final _origin = TextEditingController(
     text: ref.read(posProvider).syncOrigin ?? 'https://',
   );
-  final _token = TextEditingController();
+  final _code = TextEditingController();
   bool _editing = false;
 
   @override
   void dispose() {
     _origin.dispose();
-    _token.dispose();
+    _code.dispose();
     super.dispose();
   }
 
@@ -99,8 +99,10 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.lock_outline),
               title: Text(state.syncOrigin!),
-              subtitle: const Text(
-                'Jeton enregistré dans le coffre sécurisé Android',
+              subtitle: Text(
+                state.syncActivated
+                    ? 'Terminal activé · identifiant dans le coffre sécurisé Android'
+                    : 'Jeton de recette provisoire · activez ce terminal avec un code',
               ),
             ),
             Wrap(
@@ -108,7 +110,7 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
               children: [
                 OutlinedButton(
                   onPressed: () => setState(() => _editing = true),
-                  child: const Text('Changer'),
+                  child: Text(state.syncActivated ? 'Réactiver' : 'Activer'),
                 ),
                 TextButton(
                   onPressed: state.busy ? null : controller.clearSyncConfig,
@@ -128,12 +130,16 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
             ),
             const SizedBox(height: 8),
             TextField(
-              controller: _token,
-              obscureText: true,
+              controller: _code,
               autocorrect: false,
               enableSuggestions: false,
+              textCapitalization: TextCapitalization.characters,
+              maxLength: 14,
               decoration: const InputDecoration(
-                labelText: 'Jeton de synchronisation',
+                labelText: 'Code d’activation',
+                hintText: 'XXXX-XXXX-XXXX',
+                helperText: 'Valable 15 minutes, une seule fois.',
+                counterText: '',
               ),
             ),
             const SizedBox(height: 12),
@@ -141,16 +147,18 @@ class _SyncScreenState extends ConsumerState<SyncScreen> {
               onPressed: state.busy
                   ? null
                   : () async {
-                      final ok = await controller.saveSyncConfig(
+                      final ok = await controller.activateSync(
                         _origin.text,
-                        _token.text,
+                        _code.text,
                       );
                       if (ok && mounted) {
-                        _token.clear();
+                        _code.clear();
                         setState(() => _editing = false);
                       }
                     },
-              child: const Text('Enregistrer'),
+              child: Text(
+                state.busy ? 'Activation…' : 'Activer la synchronisation',
+              ),
             ),
           ],
           const SizedBox(height: 16),

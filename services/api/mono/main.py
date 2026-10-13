@@ -10,18 +10,24 @@ from sqlalchemy import Engine, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from mono import auth
 from mono.config import Settings
 from mono.database import open_engine
 from mono.models import Category, Event, Product, Terminal, Variant
 from mono.reports import summary
 from mono.schemas import (
+    AccessToken,
     Acknowledgement,
+    ActivationCodeOut,
+    ActivationRequest,
+    Credential,
     Envelope,
     EventPage,
     PublicCatalog,
     PublicProduct,
     PublicVariant,
     ReportSummary,
+    Revocation,
     SyncState,
 )
 from mono.sync import SyncError, apply_event
@@ -61,7 +67,33 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
         response.headers["Cache-Control"] = "no-store"
         return response
 
+    def signing_key() -> str:
+        key = config.token_secret.get_secret_value()
+        if len(key) < 32:
+            raise HTTPException(503, "AUTH_NOT_CONFIGURED")
+        return key
+
+    def bearer(authorization: str | None) -> str:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(401, "UNAUTHORIZED", headers={"WWW-Authenticate": "Bearer"})
+        return authorization[len("Bearer ") :]
+
     def authorize(authorization: Annotated[str | None, Header()] = None) -> None:
+        if (authorization or "").startswith(f"Bearer {auth.ACCESS_PREFIX}."):
+            key = signing_key()
+            try:
+                with Session(database) as session:
+                    terminal = auth.verify_access(
+                        session, bearer(authorization), key, datetime.now(UTC)
+                    )
+            except auth.AuthError as exc:
+                raise HTTPException(
+                    exc.status, exc.code, headers={"WWW-Authenticate": "Bearer"}
+                ) from exc
+            if terminal != config.terminal_id:
+                raise HTTPException(403, "TERMINAL_NOT_AUTHORIZED")
+            return
+        # Static recette token, kept until the terminal has been activated.
         if not config.recette_mode:
             raise HTTPException(503, "RECETTE_DISABLED")
         expected = config.sync_token.get_secret_value()
@@ -72,6 +104,65 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
             raise HTTPException(401, "TOKEN_EXPIRED")
         if not secrets.compare_digest(authorization or "", f"Bearer {expected}"):
             raise HTTPException(401, "UNAUTHORIZED", headers={"WWW-Authenticate": "Bearer"})
+
+    def administrator(authorization: Annotated[str | None, Header()] = None) -> None:
+        expected = config.admin_token.get_secret_value()
+        if len(expected) < 32:
+            raise HTTPException(503, "ADMIN_NOT_CONFIGURED")
+        if not secrets.compare_digest(bearer(authorization), expected):
+            raise HTTPException(401, "UNAUTHORIZED", headers={"WWW-Authenticate": "Bearer"})
+
+    @app.post(
+        "/api/admin/activation-code",
+        response_model=ActivationCodeOut,
+        dependencies=[Depends(administrator)],
+    )
+    def activation_code() -> ActivationCodeOut:
+        signing_key()  # a code is useless while tokens cannot be signed
+        try:
+            with Session(database) as session, session.begin():
+                code, expires = auth.issue_activation_code(session, datetime.now(UTC))
+        except auth.AuthError as exc:
+            raise HTTPException(exc.status, exc.code) from exc
+        return ActivationCodeOut(code=code, expires_at=expires)
+
+    @app.post(
+        "/api/admin/revoke-terminal",
+        response_model=Revocation,
+        dependencies=[Depends(administrator)],
+    )
+    def revoke_terminal() -> Revocation:
+        with Session(database) as session, session.begin():
+            return Revocation(revoked=auth.revoke_all(session, datetime.now(UTC)))
+
+    @app.post("/api/private/auth/activate", response_model=Credential)
+    def activate(request: ActivationRequest) -> Credential:
+        key = signing_key()
+        now = datetime.now(UTC)
+        try:
+            with Session(database) as session, session.begin():
+                credential = auth.activate(session, str(request.terminal_id), request.code, now)
+            if credential is None:  # the failed attempt is committed first
+                raise HTTPException(401, "ACTIVATION_INVALID")
+            with Session(database) as session, session.begin():
+                token, expires = auth.exchange(session, credential, key, now)
+        except auth.AuthError as exc:
+            raise HTTPException(exc.status, exc.code) from exc
+        return Credential(credential=credential, access_token=token, expires_at=expires)
+
+    @app.post("/api/private/auth/token", response_model=AccessToken)
+    def access_token(authorization: Annotated[str | None, Header()] = None) -> AccessToken:
+        key = signing_key()
+        try:
+            with Session(database) as session, session.begin():
+                token, expires = auth.exchange(
+                    session, bearer(authorization), key, datetime.now(UTC)
+                )
+        except auth.AuthError as exc:
+            raise HTTPException(
+                exc.status, exc.code, headers={"WWW-Authenticate": "Bearer"}
+            ) from exc
+        return AccessToken(access_token=token, expires_at=expires)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

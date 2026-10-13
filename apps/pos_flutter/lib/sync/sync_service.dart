@@ -29,9 +29,19 @@ abstract class SyncTransport {
   void close() {}
 }
 
+/// Device credential handed out at activation; only exchanged for short
+/// access tokens. Anything else is the temporary static recette token.
+const credentialPrefix = 'mtc1.';
+
+bool isDeviceCredential(String secret) => secret.startsWith(credentialPrefix);
+
 class HttpSyncTransport extends SyncTransport {
-  HttpSyncTransport(this.baseUrl, this.accessToken, {http.Client? client})
+  HttpSyncTransport(this.baseUrl, this.secret, {http.Client? client})
     : client = client ?? http.Client() {
+    _checkOrigin(baseUrl);
+  }
+
+  static void _checkOrigin(Uri baseUrl) {
     if (baseUrl.scheme != 'https' &&
         !(baseUrl.scheme == 'http' &&
             ['127.0.0.1', 'localhost'].contains(baseUrl.host))) {
@@ -48,28 +58,98 @@ class HttpSyncTransport extends SyncTransport {
       );
     }
   }
+
   final Uri baseUrl;
-  final String accessToken;
+
+  /// Device credential, or the static recette token.
+  final String secret;
   final http.Client client;
+  String? _access;
+  DateTime? _accessExpiry;
+
+  /// Exchanges an activation code for this terminal's device credential.
+  static Future<String> activate(
+    Uri baseUrl,
+    String terminalId,
+    String code, {
+    http.Client? client,
+  }) async {
+    _checkOrigin(baseUrl);
+    final http0 = client ?? http.Client();
+    try {
+      final response = await http0
+          .post(
+            baseUrl.resolve('/api/private/auth/activate'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'terminal_id': terminalId, 'code': code.trim()}),
+          )
+          .timeout(const Duration(seconds: 90));
+      if (response.statusCode != 200) {
+        throw SyncFailure(_failureCode(response));
+      }
+      final credential =
+          (jsonDecode(response.body) as Map<String, dynamic>)['credential'];
+      if (credential is! String || !isDeviceCredential(credential)) {
+        throw const SyncFailure('INVALID_RESPONSE');
+      }
+      return credential;
+    } finally {
+      if (client == null) http0.close();
+    }
+  }
+
+  /// Bearer value: a short access token, renewed a minute before it ends.
+  Future<String> _authorization() async {
+    if (!isDeviceCredential(secret)) return secret;
+    final now = DateTime.now().toUtc();
+    if (_access != null &&
+        _accessExpiry!.isAfter(now.add(const Duration(minutes: 1)))) {
+      return _access!;
+    }
+    final response = await client
+        .post(
+          baseUrl.resolve('/api/private/auth/token'),
+          headers: {'Authorization': 'Bearer $secret'},
+        )
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) throw SyncFailure(_failureCode(response));
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    _access = body['access_token'] as String;
+    _accessExpiry = DateTime.parse(body['expires_at'] as String).toUtc();
+    return _access!;
+  }
+
+  /// One retry with a fresh token when the server finds it expired (the
+  /// terminal clock may be off).
+  Future<http.Response> _call(
+    Future<http.Response> Function(String bearer) request,
+  ) async {
+    var response = await request(await _authorization());
+    if (response.statusCode == 401 && isDeviceCredential(secret)) {
+      _access = null;
+      response = await request(await _authorization());
+    }
+    if (response.statusCode != 200) throw SyncFailure(_failureCode(response));
+    return response;
+  }
 
   @override
   Future<Map<String, dynamic>> send(Map<String, dynamic> envelope) async {
-    final request =
-        http.Request('POST', baseUrl.resolve('/api/private/sync/events'))
-          ..followRedirects = false
-          ..headers.addAll({
-            'Authorization': 'Bearer $accessToken',
-            'Content-Type': 'application/json',
-          })
-          ..body = jsonEncode(envelope);
-    final streamed = await client
-        .send(request)
-        .timeout(const Duration(seconds: 15));
-    final response = await http.Response.fromStream(streamed)
-        .timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) {
-      throw SyncFailure(_failureCode(response));
-    }
+    final response = await _call((bearer) async {
+      final request =
+          http.Request('POST', baseUrl.resolve('/api/private/sync/events'))
+            ..followRedirects = false
+            ..headers.addAll({
+              'Authorization': 'Bearer $bearer',
+              'Content-Type': 'application/json',
+            })
+            ..body = jsonEncode(envelope);
+      final streamed = await client
+          .send(request)
+          .timeout(const Duration(seconds: 15));
+      return http.Response.fromStream(streamed)
+          .timeout(const Duration(seconds: 15));
+    });
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
@@ -77,13 +157,14 @@ class HttpSyncTransport extends SyncTransport {
     String path, [
     Map<String, String>? query,
   ]) async {
-    final response = await client
-        .get(
-          baseUrl.resolve(path).replace(queryParameters: query),
-          headers: {'Authorization': 'Bearer $accessToken'},
-        )
-        .timeout(const Duration(seconds: 30));
-    if (response.statusCode != 200) throw SyncFailure(_failureCode(response));
+    final response = await _call(
+      (bearer) => client
+          .get(
+            baseUrl.resolve(path).replace(queryParameters: query),
+            headers: {'Authorization': 'Bearer $bearer'},
+          )
+          .timeout(const Duration(seconds: 30)),
+    );
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 

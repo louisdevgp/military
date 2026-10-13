@@ -61,6 +61,12 @@ final syncTransportFactoryProvider =
       (ref) => HttpSyncTransport.new,
     );
 
+/// Exchanges an activation code for the device credential.
+final terminalActivatorProvider =
+    Provider<
+      Future<String> Function(Uri origin, String terminalId, String code)
+    >((ref) => HttpSyncTransport.activate);
+
 /// Background sync cadence and the short delay after an operation.
 const autoSyncInterval = Duration(minutes: 2);
 const autoSyncDelay = Duration(seconds: 5);
@@ -83,6 +89,7 @@ class PosState {
     this.receiptSettings = const ReceiptSettings(),
     this.syncStatus = const SyncStatus(),
     this.syncOrigin,
+    this.syncActivated = false,
     this.autoSync = true,
     this.syncing = false,
     this.reconcileRequired = false,
@@ -103,6 +110,9 @@ class PosState {
   /// and a background run in progress (never blocks the cashier).
   final SyncStatus syncStatus;
   final String? syncOrigin;
+
+  /// Device credential (activation) rather than the static recette token.
+  final bool syncActivated;
   final bool autoSync, syncing;
 
   /// Restored terminal not yet caught up with the server: no new operation.
@@ -129,6 +139,7 @@ class PosState {
     ReceiptSettings? receiptSettings,
     SyncStatus? syncStatus,
     String? Function()? syncOrigin,
+    bool? syncActivated,
     bool? autoSync,
     bool? syncing,
     bool? reconcileRequired,
@@ -147,6 +158,7 @@ class PosState {
     receiptSettings: receiptSettings ?? this.receiptSettings,
     syncStatus: syncStatus ?? this.syncStatus,
     syncOrigin: syncOrigin == null ? this.syncOrigin : syncOrigin(),
+    syncActivated: syncActivated ?? this.syncActivated,
     autoSync: autoSync ?? this.autoSync,
     syncing: syncing ?? this.syncing,
     reconcileRequired: reconcileRequired ?? this.reconcileRequired,
@@ -934,7 +946,10 @@ class PosController extends Notifier<PosState> {
     _transport?.close();
     _transport = next;
     _sync = SyncService(repo.db, next);
-    state = state.copy(syncOrigin: () => origin);
+    state = state.copy(
+      syncOrigin: () => origin,
+      syncActivated: isDeviceCredential(token),
+    );
     _armPeriodic();
   }
 
@@ -980,6 +995,55 @@ class PosController extends Notifier<PosState> {
     return true;
   }
 
+  /// Activates this terminal with a one-time code from the administrator:
+  /// the device credential goes to the Keystore-backed store, never the
+  /// screen, and only buys short access tokens.
+  Future<bool> activateSync(String url, String code) async {
+    if (state.busy) return false;
+    state = state.copy(busy: true);
+    try {
+      actor.requireAdmin();
+      final clean = code.toUpperCase().replaceAll(RegExp(r'[\s-]'), '');
+      if (!RegExp(r'^[A-HJ-NP-Z2-9]{12}$').hasMatch(clean)) {
+        throw const BusinessException(
+          'Code d’activation : 12 caractères, au format XXXX-XXXX-XXXX.',
+        );
+      }
+      final origin = url.trim().replaceAll(RegExp(r'/+$'), '');
+      final credential = await ref.read(terminalActivatorProvider)(
+        Uri.parse(origin),
+        state.terminalId,
+        clean,
+      );
+      await _store.write('sync_origin', origin);
+      await _store.write('sync_token', credential);
+      _connect(origin, credential);
+    } on BusinessException catch (e) {
+      state = state.copy(busy: false, message: e.message);
+      return false;
+    } on SyncFailure catch (e) {
+      state = state.copy(
+        busy: false,
+        message: e.code.endsWith('ACTIVATION_INVALID')
+            ? 'Code d’activation refusé : expiré, déjà utilisé ou mal saisi. Demandez-en un nouveau.'
+            : 'Activation impossible : ${syncErrorLabel(e.code)}',
+      );
+      return false;
+    } catch (_) {
+      state = state.copy(
+        busy: false,
+        message: 'Activation impossible : vérifiez la connexion et l’adresse.',
+      );
+      return false;
+    }
+    state = state.copy(
+      busy: false,
+      message: 'Terminal activé : synchronisation sécurisée en place.',
+    );
+    unawaited(synchronize());
+    return true;
+  }
+
   Future<void> clearSyncConfig() async {
     try {
       actor.requireAdmin();
@@ -999,6 +1063,7 @@ class PosController extends Notifier<PosState> {
     _sync = null;
     state = state.copy(
       syncOrigin: () => null,
+      syncActivated: false,
       message: 'Serveur oublié : synchronisation arrêtée, données conservées.',
     );
   }

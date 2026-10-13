@@ -13,7 +13,14 @@ services:
     envVars:
       - key: MONO_RECETTE_MODE
         value: "true"
+      # Temporary static token, until the terminal is activated with a code.
       - key: MONO_SYNC_TOKEN
+        generateValue: true
+      # Signs the 15-minute access tokens (lot 7).
+      - key: MONO_TOKEN_SECRET
+        generateValue: true
+      # Shop administrator: requests activation codes, revokes the terminal.
+      - key: MONO_ADMIN_TOKEN
         generateValue: true
       # Supabase session pooler URI, postgresql+psycopg://…:5432/postgres?sslmode=require
       - key: MONO_DATABASE_URL

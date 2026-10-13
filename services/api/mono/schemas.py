@@ -300,3 +300,26 @@ class PublicCatalog(StrictModel):
     availability_notice: str = (
         "Catalogue synchronisé. Disponibilité à confirmer auprès de la boutique."
     )
+
+
+class ActivationRequest(StrictModel):
+    terminal_id: UUID
+    code: Annotated[str, Field(min_length=12, max_length=20)]
+
+
+class ActivationCodeOut(StrictModel):
+    code: str
+    expires_at: AwareDatetime
+
+
+class AccessToken(StrictModel):
+    access_token: str
+    expires_at: AwareDatetime
+
+
+class Credential(AccessToken):
+    credential: str
+
+
+class Revocation(StrictModel):
+    revoked: int

@@ -291,7 +291,11 @@ String syncErrorLabel(String code) {
   final status = code.split(':').first;
   final detail = code.contains(':') ? code.split(':').last : '';
   final text = switch (status) {
-    'HTTP_401' => 'Jeton refusé ou expiré : demandez un nouveau jeton.',
+    'HTTP_401' => switch (detail) {
+      'CREDENTIAL_REVOKED' || 'CREDENTIAL_EXPIRED' =>
+        'Terminal désactivé côté serveur : réactivez-le avec un nouveau code.',
+      _ => 'Accès refusé : réactivez le terminal avec un nouveau code.',
+    },
     'HTTP_403' =>
       detail == 'ADMIN_REQUIRED'
           ? 'Opération réservée à un administrateur côté serveur.'
@@ -300,6 +304,8 @@ String syncErrorLabel(String code) {
     'HTTP_422' => 'Données refusées par le serveur.',
     'HTTP_413' => 'Opération trop volumineuse.',
     'INVALID_ACK' => 'Réponse du serveur invalide.',
+    'HTTP_503' when detail == 'AUTH_NOT_CONFIGURED' =>
+      'Serveur pas encore configuré pour l’activation.',
     _ when status.startsWith('HTTP_5') => 'Serveur momentanément indisponible.',
     _ => 'Réseau ou serveur injoignable.',
   };

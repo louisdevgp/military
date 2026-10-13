@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     sync_token: SecretStr = SecretStr("")
     terminal_id: str = ""
     token_expires_at: datetime | None = None
+    # Signs short access tokens; at least 32 characters.
+    token_secret: SecretStr = SecretStr("")
+    # Lets the shop administrator request activation codes; at least 32 characters.
+    admin_token: SecretStr = SecretStr("")
 
     @field_validator("database_url")
     @classmethod
