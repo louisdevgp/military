@@ -784,7 +784,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     );
   }
 
-  Widget _history(PosState state) => state.sales.isEmpty
+  Widget _history(PosState state) =>
+      state.sales.isEmpty && state.historySeller == null
       ? Padding(
           padding: const EdgeInsets.all(20),
           child: _empty(
@@ -796,10 +797,42 @@ class _PosScreenState extends ConsumerState<PosScreen> {
       : ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
-            const SectionLabel(
-              'Vos dernières ventes',
-              subtitle: 'Les 100 dernières · Heure d’Abidjan',
+            SectionLabel(
+              _admin ? 'Dernières ventes' : 'Vos dernières ventes',
+              subtitle: _admin
+                  ? 'Les 100 dernières · Heure d’Abidjan'
+                  : 'Vos 100 dernières ventes · Heure d’Abidjan',
             ),
+            // The administrator follows each seller; a seller only ever
+            // receives their own sales.
+            if (_admin && state.sellers.length > 1) ...[
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final (id, name) in [(null, 'Tous'), ...state.sellers])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(name),
+                          selected: state.historySeller == id,
+                          onSelected: state.busy
+                              ? null
+                              : (_) => ref
+                                    .read(posProvider.notifier)
+                                    .filterHistory(id),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (state.sales.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Aucune vente pour ce vendeur.'),
+              ),
             for (final sale in state.sales)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -830,7 +863,9 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                                 style: Theme.of(context).textTheme.bodySmall,
                               ),
                               Text(
-                                sale['number'] as String,
+                                _admin && sale['seller'] != null
+                                    ? '${sale['number']} · ${sale['seller']}'
+                                    : sale['number'] as String,
                                 style: const TextStyle(
                                   fontSize: 10,
                                   color: MonoColors.muted,

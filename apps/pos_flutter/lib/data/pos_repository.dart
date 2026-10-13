@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:drift/extensions/json1.dart';
 import 'package:uuid/uuid.dart';
 
 import '../domain/models.dart';
@@ -863,14 +864,35 @@ class PosRepository {
         .write(TerminalStatesCompanion(eventSequence: Value(seq)));
   }
 
+  /// Operators who recorded at least one sale (id, name), for the
+  /// administrator's history filter.
+  Future<List<(String, String)>> sellers() async {
+    final rows = await db
+        .customSelect(
+          "SELECT DISTINCT json_extract(snapshot, '\$.seller_id') AS id, "
+          "json_extract(snapshot, '\$.seller') AS name FROM sales ORDER BY name",
+        )
+        .get();
+    return [
+      for (final r in rows)
+        if (r.readNullable<String>('id') != null)
+          (r.read<String>('id'), r.readNullable<String>('name') ?? '?'),
+    ];
+  }
+
   /// Latest 100 sales. A sale whose payment was corrected carries the
   /// effective payment under `correction`; its snapshot is left unchanged.
-  Future<List<Map<String, dynamic>>> history() async {
-    final rows =
-        await (db.select(db.sales)
-              ..orderBy([(s) => OrderingTerm.desc(s.occurredAt)])
-              ..limit(100))
-            .get();
+  /// Latest 100 sales, all of them or only those of [sellerId].
+  Future<List<Map<String, dynamic>>> history({String? sellerId}) async {
+    final query = db.select(db.sales)
+      ..orderBy([(s) => OrderingTerm.desc(s.occurredAt)])
+      ..limit(100);
+    if (sellerId != null) {
+      query.where(
+        (s) => s.snapshot.jsonExtract<String>(r'$.seller_id').equals(sellerId),
+      );
+    }
+    final rows = await query.get();
     final latest = <String, SaleCorrection>{};
     if (rows.isNotEmpty) {
       final corrections =

@@ -218,6 +218,11 @@ Détails et procédures : `securite.md`.
 - **Stock → Retirer l'article de la vente** désactive toutes les couleurs et tailles d'un article en une transaction, après confirmation avec rappel du stock restant ; **Remettre tout l'article en vente** l'annule. Pas de suppression physique : historique, tickets, retours et rapports conservés. Un événement `variant.updated` audité par variante modifiée (type déjà validé par le serveur et rejoué par la réconciliation).
 - Flutter : analyse sans anomalie, **72 tests réussis** (1 ignoré). Pas de changement serveur.
 
+## Incrément 0.14.2+22 — historique selon le profil
+
+- Un vendeur ne reçoit que ses propres ventes dans l'historique (filtre sur `seller_id` de l'instantané de vente, appliqué dans la requête) ; l'administrateur voit toutes les ventes avec le nom du vendeur et un filtre par vendeur. L'historique est vidé dès que l'opérateur connecté change. Pas de migration.
+- Flutter : analyse sans anomalie, **75 tests réussis** (1 ignoré). Pas de changement serveur.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

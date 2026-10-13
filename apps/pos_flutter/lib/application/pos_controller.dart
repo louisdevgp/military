@@ -98,6 +98,8 @@ class PosState {
     this.reconcileRequired = false,
     this.lastBackupAt,
     this.customerRequired = const {},
+    this.historySeller,
+    this.sellers = const [],
   });
   final List<CatalogItem> items;
   final Map<String, int> cart;
@@ -124,6 +126,11 @@ class PosState {
 
   /// Customer fields made mandatory by the administrator.
   final Set<String> customerRequired;
+
+  /// Administrator's history filter (null = every seller) and the
+  /// operators that can be chosen.
+  final String? historySeller;
+  final List<(String, String)> sellers;
   int get cartQuantity => cart.values.fold(0, (sum, value) => sum + value);
   int get total => cart.entries.fold(
     0,
@@ -148,6 +155,8 @@ class PosState {
     bool? reconcileRequired,
     String? lastBackupAt,
     Set<String>? customerRequired,
+    String? Function()? historySeller,
+    List<(String, String)>? sellers,
   }) => PosState(
     items: items ?? this.items,
     cart: cart ?? this.cart,
@@ -167,6 +176,8 @@ class PosState {
     reconcileRequired: reconcileRequired ?? this.reconcileRequired,
     lastBackupAt: lastBackupAt ?? this.lastBackupAt,
     customerRequired: customerRequired ?? this.customerRequired,
+    historySeller: historySeller == null ? this.historySeller : historySeller(),
+    sellers: sellers ?? this.sellers,
   );
 }
 
@@ -183,8 +194,25 @@ class PosController extends Notifier<PosState> {
   Timer? _periodic, _soon;
   bool _configLoaded = false;
 
+  /// Administrator only: history of one seller, or of all (null).
+  Future<void> filterHistory(String? sellerId) async {
+    if (ref.read(currentActorProvider)?.role != Role.admin) return;
+    state = state.copy(historySeller: () => sellerId);
+    await refresh();
+  }
+
   @override
   PosState build() {
+    // Another operator never sees the previous one's history, even briefly.
+    ref.listen(currentActorProvider, (previous, next) {
+      if (previous?.id != next?.id) {
+        state = state.copy(
+          sales: const [],
+          sellers: const [],
+          historySeller: () => null,
+        );
+      }
+    });
     ref.onDispose(() {
       _periodic?.cancel();
       _soon?.cancel();
@@ -299,7 +327,13 @@ class PosController extends Notifier<PosState> {
       await _loadSyncConfig();
     }
     final items = await repo.catalog();
-    final sales = await repo.history();
+    // A seller sees only their own sales; the administrator sees all of
+    // them, optionally filtered by seller.
+    final me = ref.read(currentActorProvider);
+    final admin = me?.role == Role.admin;
+    final sales = me == null
+        ? const <Map<String, dynamic>>[]
+        : await repo.history(sellerId: admin ? state.historySeller : me.id);
     final terminal = await repo.terminal();
     final settings = await ref
         .read(settingsRepositoryProvider)
@@ -315,6 +349,7 @@ class PosController extends Notifier<PosState> {
       reconcileRequired: await _setting(reconcileKey) != null,
       lastBackupAt: await _setting(lastBackupKey),
       customerRequired: await repo.customerRequired(),
+      sellers: admin ? await repo.sellers() : const [],
     );
     _scheduleSoon();
   }

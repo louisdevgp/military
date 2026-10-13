@@ -19,6 +19,10 @@ L’écran affiche en permanence « Recette · <utilisateur> · <imprimante> ».
 
 **Administration → Synchronisation → Activer** : origine du serveur et code d'activation donné par le responsable (valable 15 minutes, une seule fois). Voir `securite.md`.
 
+## Historique des ventes
+
+Un vendeur ne voit dans **Historique** que ses propres ventes (et ne réimprime que leurs duplicatas). L'administrateur voit toutes les ventes, avec le nom du vendeur, et peut filtrer par vendeur.
+
 ## Erreur sur la somme remise
 
 - Les boutons **Montant exact** et billets ronds évitent la saisie. Si la monnaie à rendre atteint le total ou 50 000 FCFA, l’application demande de vérifier la somme avant de valider.
