@@ -742,6 +742,22 @@ class PosController extends Notifier<PosState> {
         : 'Variante désactivée : elle n’est plus proposée à la vente.';
   });
 
+  /// Withdraws every colour and size of an article from sale, or puts
+  /// them back.
+  Future<bool> setProductActive(String productId, bool active) =>
+      _run(() async {
+        final changed = await repo.setProductActive(actor, productId, active);
+        if (changed == 0) {
+          return active
+              ? 'Article déjà en vente.'
+              : 'Article déjà retiré de la vente.';
+        }
+        return active
+            ? 'Article remis en vente : $changed variante(s).'
+            : 'Article retiré de la vente : $changed variante(s). '
+                  'Historique, tickets et rapports sont conservés.';
+      });
+
   /// Runs an administrator operation, then refreshes the screens.
   Future<bool> _run(Future<String> Function() operation) async {
     if (state.busy) return false;

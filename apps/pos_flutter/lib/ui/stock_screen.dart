@@ -184,6 +184,38 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (_items.any(
+                      (i) => i.productId == v.productId && i.active,
+                    ))
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red.shade800,
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _withdraw(v, active: false);
+                        },
+                        icon: const Icon(Icons.remove_shopping_cart_outlined),
+                        label: const Text('Retirer l’article de la vente'),
+                      ),
+                    if (_items.any(
+                      (i) => i.productId == v.productId && !i.active,
+                    ))
+                      TextButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          _withdraw(v, active: true);
+                        },
+                        icon: const Icon(Icons.add_shopping_cart_outlined),
+                        label: const Text('Remettre tout l’article en vente'),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 16),
                 const SectionLabel('Historique'),
                 if (!snapshot.hasData)
@@ -209,6 +241,46 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         ),
       ),
     );
+  }
+
+  /// Every colour and size of the article at once, after confirmation.
+  Future<void> _withdraw(CatalogItem v, {required bool active}) async {
+    final variants = [
+      for (final i in _items)
+        if (i.productId == v.productId && i.active != active) i,
+    ];
+    final stock = variants.fold<int>(0, (sum, i) => sum + i.stock);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          active
+              ? 'Remettre « ${v.name} » en vente ?'
+              : 'Retirer « ${v.name} » ?',
+        ),
+        content: Text(
+          active
+              ? '${variants.length} couleur(s)/taille(s) seront de nouveau proposées à la caisse.'
+              : '${variants.length} couleur(s)/taille(s) ne seront plus proposées à la caisse.'
+                    '${stock > 0 ? '\n\nAttention : il reste $stock pièce(s) en stock. Elles restent comptées ; enregistrez une perte si elles ne sont plus là.' : ''}'
+                    '\n\nRien n’est effacé : ventes, tickets et rapports sont conservés. '
+                    'Vous pourrez remettre l’article en vente.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(active ? 'Remettre en vente' : 'Retirer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(posProvider.notifier).setProductActive(v.productId, active);
+    await _reload();
   }
 
   static String _kindLabel(String code) => switch (code) {

@@ -40,6 +40,10 @@ Administrateur : **Administration → Stock**. Toucher une variante pour enregis
 
 **Inventaire** (bouton en haut de l'écran Stock) : saisir la quantité réellement comptée pour chaque variante vérifiée (laisser vide si non comptée) ; chaque écart est enregistré comme correction avec la quantité comptée.
 
+## Retirer un article qui n'est plus vendu
+
+**Stock** → toucher une ligne de l'article → **Retirer l'article de la vente** : toutes ses couleurs et tailles disparaissent de la caisse en une fois, après confirmation (le stock restant est rappelé ; enregistrer une perte si les pièces ne sont plus là). Rien n'est effacé : ventes, tickets, retours et rapports restent intacts. **Remettre tout l'article en vente** l'annule. Pour une seule couleur ou taille : **Désactiver**.
+
 ## Modifier un prix
 
 Administrateur : toucher l'article dans le catalogue, puis **Modifier le prix**. Saisir le nouveau prix de chaque taille, ou utiliser **Même prix pour toutes** puis **Appliquer**. Le prix vaut pour les prochaines ventes ; les ventes déjà faites et leurs duplicatas gardent leur prix.

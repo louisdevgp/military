@@ -213,6 +213,11 @@ Détails et procédures : `securite.md`.
 - **Vérifications** : analyse Flutter sans anomalie, **71 tests Flutter réussis** (1 ignoré, rendu des tickets à la demande). Contrat régénéré (21 événements). API : **37 tests réussis sur PostgreSQL 18.6**, 36 + 1 ignoré sur SQLite. Render redéployé : migration 0008 appliquée et clé de signature présente (un code factice est refusé avec `ACTIVATION_INVALID`).
 - **H10** : essai sur l'appareil en attente (appareil déconnecté d'adb). Avant l'installation, la base du H10 sera copiée sur le PC, car l'installation la chiffre. Activation par code et création du code de secours à faire par l'administrateur.
 
+## Incrément 0.14.1+21 — retirer un article de la vente
+
+- **Stock → Retirer l'article de la vente** désactive toutes les couleurs et tailles d'un article en une transaction, après confirmation avec rappel du stock restant ; **Remettre tout l'article en vente** l'annule. Pas de suppression physique : historique, tickets, retours et rapports conservés. Un événement `variant.updated` audité par variante modifiée (type déjà validé par le serveur et rejoué par la réconciliation).
+- Flutter : analyse sans anomalie, **72 tests réussis** (1 ignoré). Pas de changement serveur.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).

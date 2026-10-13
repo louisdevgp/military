@@ -244,6 +244,39 @@ class PosRepository {
     });
   }
 
+  /// Withdraws (or puts back) every colour and size of an article in one
+  /// transaction. Nothing is deleted: history, tickets and reports keep
+  /// referring to it. One audited variant.updated per changed variant.
+  /// Returns the number of variants changed.
+  Future<int> setProductActive(
+    Actor actor,
+    String productId,
+    bool active,
+  ) async {
+    actor.requireAdmin();
+    return db.transaction(() async {
+      final variants = await (db.select(
+        db.variants,
+      )..where((v) => v.productId.equals(productId))).get();
+      if (variants.isEmpty) {
+        throw const BusinessException('Article introuvable.');
+      }
+      final at = now().toUtc().toIso8601String();
+      var changed = 0;
+      for (final variant in variants) {
+        if (variant.active == active) continue;
+        await (db.update(db.variants)..where((v) => v.id.equals(variant.id)))
+            .write(VariantsCompanion(active: Value(active)));
+        await appendEvent(uuid.v4(), 'variant.updated', actor, at, {
+          'variant_id': variant.id,
+          'active': active,
+        });
+        changed++;
+      }
+      return changed;
+    });
+  }
+
   /// Stock history of a variant, newest first, with operator names.
   Future<List<StockMovementView>> movements(String variantId) async {
     final rows = await db
