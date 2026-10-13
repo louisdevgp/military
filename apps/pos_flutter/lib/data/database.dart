@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'encryption.dart';
+
 part 'database.g.dart';
 
 class Categories extends Table {
@@ -234,7 +236,21 @@ class TerminalStates extends Table {
 )
 class PosDatabase extends _$PosDatabase {
   PosDatabase([QueryExecutor? executor])
-    : super(executor ?? driftDatabase(name: 'mono_recette_v1'));
+    : super(executor ?? driftDatabase(name: databaseName));
+
+  /// The terminal's database, encrypted with [hexKey] (SQLite3 Multiple
+  /// Ciphers): the key is the first statement of every connection.
+  PosDatabase.encrypted(String hexKey)
+    : super(
+        driftDatabase(
+          name: databaseName,
+          native: DriftNativeOptions(
+            setup: (raw) => raw.execute(keyPragma(hexKey)),
+          ),
+        ),
+      );
+
+  static const databaseName = 'mono_recette_v1';
 
   @override
   int get schemaVersion => 8;

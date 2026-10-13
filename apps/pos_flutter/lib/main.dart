@@ -10,6 +10,7 @@ import 'backup/backup_platform.dart';
 import 'backup/backup_service.dart';
 import 'application/session_controller.dart';
 import 'data/database.dart';
+import 'data/encryption.dart';
 import 'data/pos_repository.dart';
 import 'printing/printer_service.dart';
 import 'sync/secure_store.dart';
@@ -39,16 +40,48 @@ Future<void> main() async {
     return;
   }
   // A verified, staged restore replaces the database before it is opened.
+  final docs = await getApplicationDocumentsDirectory();
   BackupManifest? restored;
   try {
     restored = await BackupService.applyPendingRestore(
-      docsDir: await getApplicationDocumentsDirectory(),
-      dbFileName: 'mono_recette_v1.sqlite',
+      docsDir: docs,
+      dbFileName: '${PosDatabase.databaseName}.sqlite',
     );
   } catch (_) {
     restored = null; // the staged files stay for a later attempt
   }
-  final db = PosDatabase();
+  // Encrypted at rest with a key kept by the Android Keystore; a clear
+  // database (older install, restored backup) is encrypted before opening.
+  String? key;
+  if (Platform.isAndroid) {
+    final file = File('${docs.path}/${PosDatabase.databaseName}.sqlite');
+    try {
+      key = await databaseKey(const AndroidSecureStore(), file);
+      encryptIfPlain(file, key);
+    } catch (e) {
+      runApp(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  e is DatabaseKeyMissing
+                      ? 'Clé de la base locale introuvable. Ne désinstallez pas '
+                            'l’application : contactez le support, ou restaurez '
+                            'la dernière sauvegarde après réinstallation.'
+                      : 'Chiffrement de la base locale impossible. Les données '
+                            'restent intactes. Ne désinstallez pas l’application.',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+  }
+  final db = key == null ? PosDatabase() : PosDatabase.encrypted(key);
   final repo = PosRepository(db);
   try {
     await repo.initialize();
@@ -69,6 +102,7 @@ Future<void> main() async {
         overrides: [
           repositoryProvider.overrideWithValue(repo),
           printerProvider.overrideWithValue(printer),
+          databaseKeyProvider.overrideWithValue(key),
           if (Platform.isAndroid)
             secureStoreProvider.overrideWithValue(const AndroidSecureStore()),
         ],

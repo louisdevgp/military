@@ -189,11 +189,35 @@ Les déconnexions du service d’approbation automatique ont empêché certaines
 - Flutter : analyse sans anomalie, **60 tests réussis**. Contrat régénéré (18 événements). API : **29 réussis sur PostgreSQL 18.6**, 28 + 1 ignoré sur SQLite.
 - Sur le H10 avant installation : aucune sauvegarde encore créée (essai de sauvegarde 0.12.0 à faire).
 
+## Incrément 0.14.0+20 — sécurité de production (lot 7)
+
+Détails et procédures : `securite.md`.
+
+- **Récupération de l'accès administrateur** :
+  - code de secours affiché une seule fois à l'activation ou depuis Utilisateurs ;
+  - « PIN administrateur oublié ? » sur l'écran de verrouillage ;
+  - code à usage unique, remplacé aussitôt ; essais limités ;
+  - alerte quand un seul administrateur est actif ;
+  - événements d'audit `user.admin_recovered` et `security.recovery_code_created`.
+- **Activation du terminal et jetons courts** :
+  - code d'activation à usage unique (15 min, 5 essais) demandé par l'administrateur avec `MONO_ADMIN_TOKEN` ;
+  - identifiant d'appareil dans le Keystore ; jetons d'accès signés de 15 min, renouvelés automatiquement ;
+  - révocation immédiate ; une réactivation révoque l'appareil précédent ;
+  - empreintes SHA-256 seules en base (migration additive 0008, sécurité par ligne) ;
+  - ancien jeton de recette accepté en mode recette jusqu'à l'activation.
+- **Base locale chiffrée** :
+  - SQLite3 Multiple Ciphers 2.5.0, clé de 256 bits dans le Keystore ;
+  - chiffrement sur place de la base existante au démarrage, avec copie conservée jusqu'à la vérification ;
+  - sauvegardes déchiffrées avant d'être scellées par leur mot de passe, donc restaurables sur un autre terminal ;
+  - essai sur PC : le fichier ne contient plus de texte lisible, et toute lecture sans la bonne clé est refusée.
+- **Vérifications** : analyse Flutter sans anomalie, **71 tests Flutter réussis** (1 ignoré, rendu des tickets à la demande). Contrat régénéré (21 événements). API : **37 tests réussis sur PostgreSQL 18.6**, 36 + 1 ignoré sur SQLite. Render redéployé : migration 0008 appliquée et clé de signature présente (un code factice est refusé avec `ACTIVATION_INVALID`).
+- **H10** : essai sur l'appareil en attente (appareil déconnecté d'adb). Avant l'installation, la base du H10 sera copiée sur le PC, car l'installation la chiffre. Activation par code et création du code de secours à faire par l'administrateur.
+
 ## Limites matérielles et fonctionnelles
 
 L’impression passe par le service SRPrinter du H10 (voir 0.3.0) ; un premier ticket papier a été observé. Le service ne signale ni papier absent ni capot ouvert : le résultat reste « transmis, à vérifier ». La compatibilité de l'interface n'est établie que par l'essai sur ce terminal et ce firmware (H10P-OS01 14.0.182, SRPrinter 8.3.5).
 
-L’authentification de production, les photos serveur, la sauvegarde/restauration complète, les retours, dépenses, rapports et site public restent à réaliser. Aucune recette de redémarrage complet du téléphone, papier absent ou mode avion n’est déclarée réussie. Les opérations commerciales réelles ne sont pas autorisées par cette recette.
+L'APK de production signé, le mode production de l'application, les photos serveur et le site public restent à réaliser (lots 8 et 9). Aucune recette de redémarrage complet du téléphone, papier absent ou mode avion n’est déclarée réussie. Les opérations commerciales réelles ne sont pas autorisées par cette recette.
 
 ## Distinction obligatoire
 Un retour de méthode SDK ne prouve pas que le papier est sorti ni qu'il est lisible. Un APK signé avec une clé de développement ne vaut pas APK de production. Les tests serveur SQLite ne valent pas tests PostgreSQL.

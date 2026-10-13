@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 
 import '../data/database.dart';
+import '../data/encryption.dart';
 import '../data/pos_repository.dart';
 import '../domain/models.dart';
 import 'backup_platform.dart';
@@ -35,12 +36,21 @@ class BackupManifest {
 /// (product photos, custom logo), and staged restores applied at startup
 /// before the database is opened.
 class BackupService {
-  BackupService(this.pos, this.platform, {required this.workDir});
+  BackupService(
+    this.pos,
+    this.platform, {
+    required this.workDir,
+    this.databaseKey,
+  });
   final PosRepository pos;
   final BackupPlatform platform;
 
   /// Private app directory for temporary snapshots.
   final Directory workDir;
+
+  /// Key of the encrypted database: snapshots are decrypted before being
+  /// sealed with the passphrase, so a backup opens on any terminal.
+  final String? databaseKey;
   PosDatabase get db => pos.db;
 
   static String _sha(List<int> bytes) => sha256.convert(bytes).toString();
@@ -61,6 +71,7 @@ class BackupService {
     try {
       await workDir.create(recursive: true);
       await db.customStatement('VACUUM INTO ?', [snapshot.path]);
+      if (databaseKey != null) decryptCopy(snapshot.path, databaseKey!);
       final dbBytes = await snapshot.readAsBytes();
       final paths = <String>{
         for (final r

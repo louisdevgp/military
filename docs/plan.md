@@ -28,7 +28,7 @@ Lots à réaliser, dans cet ordre, chacun validé (analyse, tests, PostgreSQL, A
 4. ✅ (0.10.0) Synchronisation automatique et réglages serveur conservés de façon sécurisée.
 5. ✅ (0.12.0) Sauvegarde et restauration (base et photos), réconciliation des séquences.
 6. ✅ (0.13.0) Fiches client et champs obligatoires configurables.
-7. Sécurité de production : activation du terminal, jetons courts renouvelés, Keystore, base chiffrée, **récupération de l'accès administrateur** (code de secours affiché à l'activation ou second administrateur obligatoire), auditée.
+7. ✅ (0.14.0) Sécurité de production : activation du terminal, jetons courts renouvelés, Keystore, base chiffrée, **récupération de l'accès administrateur** (code de secours affiché à l'activation ou second administrateur obligatoire), auditée.
 8. Livraison : APK de production signé (clé hors dépôt), CI, tests sur l'appareil avec identifiant d'application distinct, recette matérielle (papier absent, redémarrage, hors ligne, mise à jour).
 9. Site public React/TypeScript/Vite.
 

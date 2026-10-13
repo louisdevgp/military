@@ -52,6 +52,9 @@ final photoProvider = Provider<PhotoService>(
   (ref) => const AndroidPhotoService(),
 );
 
+/// Key of the encrypted local database (null in tests: clear database).
+final databaseKeyProvider = Provider<String?>((ref) => null);
+
 /// Encrypted sync settings; Android Keystore in the app (see main.dart).
 final secureStoreProvider = Provider<SecureStore>((ref) => MemorySecureStore());
 
@@ -202,6 +205,7 @@ class PosController extends Notifier<PosState> {
       repo,
       ref.read(backupPlatformProvider),
       workDir: Directory('${temp.path}/backup'),
+      databaseKey: ref.read(databaseKeyProvider),
     );
   }
 

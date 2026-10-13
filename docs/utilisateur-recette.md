@@ -9,6 +9,16 @@ L’écran affiche en permanence « Recette · <utilisateur> · <imprimante> ».
 - Pour se connecter : choisir son nom puis taper le PIN sur le pavé. Après 5 erreurs, l’accès est bloqué temporairement (1 min, puis plus longtemps) ; un administrateur peut redonner un PIN.
 - Le terminal se verrouille après 5 minutes sans toucher l’écran, ou avec l’icône cadenas. Le vendeur ne voit ni la création d’articles, ni les utilisateurs, ni les réglages serveur, ni la correction de paiement.
 
+## Code de secours et PIN administrateur oublié
+
+- À l'activation, un **code de secours** s'affiche une seule fois : l'écrire sur papier et le garder hors de la boutique. Sur un terminal déjà en service : **Utilisateurs → Code de secours administrateur → Créer**.
+- PIN administrateur oublié : sur l'écran de verrouillage, **PIN administrateur oublié ?**, puis code de secours, administrateur et nouveau PIN. Un nouveau code de secours s'affiche ensuite : le noter, l'ancien ne marche plus.
+- Créer de préférence un second administrateur : il peut redonner un PIN sans code de secours.
+
+## Activer la synchronisation
+
+**Administration → Synchronisation → Activer** : origine du serveur et code d'activation donné par le responsable (valable 15 minutes, une seule fois). Voir `securite.md`.
+
 ## Erreur sur la somme remise
 
 - Les boutons **Montant exact** et billets ronds évitent la saisie. Si la monnaie à rendre atteint le total ou 50 000 FCFA, l’application demande de vérifier la somme avant de valider.

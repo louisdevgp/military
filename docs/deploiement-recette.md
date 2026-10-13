@@ -39,16 +39,16 @@ Au démarrage, le conteneur exécute `alembic upgrade head`, puis `python -m mon
 
 ## 3. Caisse H10
 
-1. Se connecter en administrateur → **Administration → Synchronisation**.
-2. Origine : `https://<service>.onrender.com` (sans chemin). Jeton : valeur `MONO_SYNC_TOKEN`. **Configurer**.
+1. Obtenir un code d'activation avec `MONO_ADMIN_TOKEN` (procédure dans `securite.md`).
+2. Se connecter en administrateur → **Administration → Synchronisation → Activer**. Origine : `https://<service>.onrender.com` (sans chemin), puis le code. **Activer la synchronisation**.
 3. Toucher l'icône de synchronisation. Si le serveur dort, la première connexion peut prendre jusqu'à 1 min. Le compteur « en attente » doit revenir à 0 et la date de dernière synchronisation s'afficher.
-4. La configuration n'est conservée que pour la session : la ressaisir après un redémarrage de l'application.
+4. L'identifiant d'appareil est conservé dans le coffre sécurisé : rien à ressaisir après un redémarrage.
 
 Contrôle : dans Supabase, **Table Editor** → `events`, `sales`, `variants` reflètent les opérations du H10.
 
 ## Limites et précautions
 
-- Mode recette : jeton partagé et temporaire, pas d'authentification de production ni de renouvellement ; à ne pas utiliser pour l'exploitation.
+- Mode recette : à ne pas utiliser pour l'exploitation. `MONO_TOKEN_SECRET` et `MONO_ADMIN_TOKEN` sont générés par Render (Blueprint) ; ne jamais les copier ailleurs que dans le terminal PowerShell de l'administrateur.
 - Le serveur ne remplace jamais le stock local ; il refuse une opération hors ordre ou incohérente (la caisse affiche le code et s'arrête à cette opération).
 - Projet Supabase en pause après 7 jours sans activité : le réactiver depuis le tableau de bord avant de synchroniser.
 - Changer de terminal ou réinstaller le H10 (nouvel identifiant) exige une réconciliation : ne pas modifier `MONO_TERMINAL_ID` sur une base qui contient déjà des opérations.
